@@ -19,7 +19,8 @@ export class GameRoom extends Room {
             player.x = payload.x;
             player.y = payload.y;
             player.z = payload.z;
-            this.state.players.set(client.sessionId, player);
+            player.yaw = payload.yaw;
+            //this.state.players.set(client.sessionId, player);
         }
     }
 }

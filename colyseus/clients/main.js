@@ -81,7 +81,11 @@ callbacks.onAdd("players", (playerState, sessionId) => {
     console.log(playerState.x, playerState.y, playerState.z);
 
     const mesh = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.5, 1.5, 8, 16),
+        new THREE.BoxGeometry(
+            1,    // width
+            3,    // height
+            1     // depth
+        ),
         new THREE.MeshStandardMaterial({
             color:0x00ff88
         })
@@ -109,6 +113,10 @@ callbacks.onAdd("players", (playerState, sessionId) => {
     callbacks.listen(playerState, "z", (z) => {
         mesh.position.z = z;
     });
+
+    callbacks.listen(playerState, "yaw", (yaw) => {
+        mesh.rotation.y = yaw;
+    });
 })
 // Lift player onto floor
 
@@ -132,6 +140,32 @@ window.addEventListener("keyup", (e) => {
     keys[e.key.toLowerCase()] = false;
 });
 
+let yaw = 0;
+let pitch = 0;
+
+const MOUSE_SENSITIVITY = 0.002;
+
+renderer.domElement.addEventListener("click", () => {
+    renderer.domElement.requestPointerLock();
+});
+
+document.addEventListener("mousemove", (e) => {
+
+    if (document.pointerLockElement !== renderer.domElement)
+        return;
+
+    yaw -= e.movementX * MOUSE_SENSITIVITY;
+
+    pitch -= e.movementY * MOUSE_SENSITIVITY;
+
+    pitch = THREE.MathUtils.clamp(
+        pitch,
+        -Math.PI / 3,
+        Math.PI / 3
+    );
+
+});
+
 const SPEED = 0.15;
 const CAMERA_SMOOTHNESS = 0.08;
 
@@ -145,20 +179,40 @@ function updatePlayer() {
 
     if (!me) return;
 
-    const direction = new THREE.Vector3();
+    // Rotate player
+    me.rotation.y = yaw;
 
-    if (keys["w"]) direction.z -= 1;
-    if (keys["s"]) direction.z += 1;
-    if (keys["a"]) direction.x -= 1;
-    if (keys["d"]) direction.x += 1;
+    // Forward vector relative to player's rotation
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        yaw
+    );
 
-    direction.normalize();
+    // Right vector relative to player's rotation
+    const right = new THREE.Vector3(1, 0, 0);
+    right.applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        yaw
+    );
 
-    me.position.addScaledVector(direction, SPEED);
+    if (keys["w"])
+        me.position.addScaledVector(forward, SPEED);
 
-    if (keys[" "]) me.position.y += SPEED;
+    if (keys["s"])
+        me.position.addScaledVector(forward, -SPEED);
 
-    if (keys["shift"]) me.position.y -= SPEED;
+    if (keys["a"])
+        me.position.addScaledVector(right, -SPEED);
+
+    if (keys["d"])
+        me.position.addScaledVector(right, SPEED);
+
+    if (keys[" "])
+        me.position.y += SPEED;
+
+    if (keys["shift"])
+        me.position.y -= SPEED;
 
     const half = ROOM_SIZE / 2;
 
@@ -170,8 +224,8 @@ function updatePlayer() {
 
     me.position.y = THREE.MathUtils.clamp(
         me.position.y,
-        -half + 1.25,
-        half - 0.5
+        -half + 1.5,
+        half - 1.5
     );
 
     me.position.z = THREE.MathUtils.clamp(
@@ -183,7 +237,8 @@ function updatePlayer() {
     room_connect.send("move", {
         x: me.position.x,
         y: me.position.y,
-        z: me.position.z
+        z: me.position.z,
+        yaw: yaw
     });
 
 }
@@ -198,18 +253,32 @@ function updateCamera() {
 
     if (!me) return;
 
-    const desiredPosition = new THREE.Vector3(
-        me.position.x,
-        me.position.y + 3,
-        me.position.z + 7
+    // Camera offset behind the player
+    const offset = new THREE.Vector3(
+        0,
+        3,
+        7
     );
+
+    // Rotate offset around player
+    offset.applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        yaw
+    );
+
+    const desiredPosition = me.position
+        .clone()
+        .add(offset);
 
     camera.position.lerp(
         desiredPosition,
         CAMERA_SMOOTHNESS
     );
 
-    camera.lookAt(me.position);
+    const target = me.position.clone();
+    target.y += 1.5;
+
+    camera.lookAt(target);
 
 }
 
