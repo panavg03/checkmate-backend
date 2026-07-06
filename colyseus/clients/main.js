@@ -2,9 +2,12 @@ import * as THREE from "three";
 import { Client, Callbacks } from "@colyseus/sdk";
  
 const client = new Client("http://localhost:2567");
- 
-// Join or create a room
+
 const room_connect = await client.joinOrCreate("gameroom");
+console.log(room_connect.roomId);
+console.log(room_connect.state);
+
+const callbacks = Callbacks.get(room_connect);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e1e);
@@ -71,23 +74,43 @@ scene.add(grid);
 // Player
 // ---------------------------
 
-const player = new THREE.Mesh(
-    new THREE.CapsuleGeometry(
-        0.5,
-        1.5,
-        8,
-        16
-    ),
-    new THREE.MeshStandardMaterial({
-        color: 0x00ff88
-    })
-);
+const playerMeshes = new Map();
 
-scene.add(player);
+callbacks.onAdd("players", (playerState, sessionId) => {
+    console.log("Player joined:", sessionId);
+    console.log(playerState.x, playerState.y, playerState.z);
 
+    const mesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.5, 1.5, 8, 16),
+        new THREE.MeshStandardMaterial({
+            color:0x00ff88
+        })
+    );
+
+    mesh.position.set(
+        playerState.x,
+        playerState.y,
+        playerState.z
+    );
+
+    //console.log(mesh.position);
+    scene.add(mesh);
+
+    playerMeshes.set(sessionId, mesh);
+
+    callbacks.listen(playerState, "x", (x) => {
+        mesh.position.x = x;
+    });
+
+    callbacks.listen(playerState, "y", (y) => {
+        mesh.position.y = y;
+    });
+
+    callbacks.listen(playerState, "z", (z) => {
+        mesh.position.z = z;
+    });
+})
 // Lift player onto floor
-
-player.position.y = -ROOM_SIZE / 2 + 1.25;
 
 // ---------------------------
 // Camera
@@ -118,6 +141,10 @@ const CAMERA_SMOOTHNESS = 0.08;
 
 function updatePlayer() {
 
+    const me = playerMeshes.get(room_connect.sessionId);
+
+    if (!me) return;
+
     const direction = new THREE.Vector3();
 
     if (keys["w"]) direction.z -= 1;
@@ -127,36 +154,37 @@ function updatePlayer() {
 
     direction.normalize();
 
-    player.position.addScaledVector(direction, SPEED);
+    me.position.addScaledVector(direction, SPEED);
 
-    if (keys[" "]) {
-        player.position.y += SPEED;
-    }
+    if (keys[" "]) me.position.y += SPEED;
 
-    if (keys["shift"]) {
-        player.position.y -= SPEED;
-    }
+    if (keys["shift"]) me.position.y -= SPEED;
 
     const half = ROOM_SIZE / 2;
 
-    player.position.x = THREE.MathUtils.clamp(
-        player.position.x,
+    me.position.x = THREE.MathUtils.clamp(
+        me.position.x,
         -half + 0.5,
         half - 0.5
     );
 
-    player.position.y = THREE.MathUtils.clamp(
-        player.position.y,
+    me.position.y = THREE.MathUtils.clamp(
+        me.position.y,
         -half + 1.25,
         half - 0.5
     );
 
-    player.position.z = THREE.MathUtils.clamp(
-        player.position.z,
+    me.position.z = THREE.MathUtils.clamp(
+        me.position.z,
         -half + 0.5,
         half - 0.5
     );
 
+    room_connect.send("move", {
+        x: me.position.x,
+        y: me.position.y,
+        z: me.position.z
+    });
 
 }
 
@@ -166,10 +194,14 @@ function updatePlayer() {
 
 function updateCamera() {
 
+    const me = playerMeshes.get(room_connect.sessionId);
+
+    if (!me) return;
+
     const desiredPosition = new THREE.Vector3(
-        player.position.x,
-        player.position.y + 3,
-        player.position.z + 7
+        me.position.x,
+        me.position.y + 3,
+        me.position.z + 7
     );
 
     camera.position.lerp(
@@ -177,7 +209,8 @@ function updateCamera() {
         CAMERA_SMOOTHNESS
     );
 
-    camera.lookAt(player.position);
+    camera.lookAt(me.position);
+
 }
 
 // ---------------------------
