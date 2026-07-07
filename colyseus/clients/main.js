@@ -118,7 +118,27 @@ callbacks.onAdd("players", (playerState, sessionId) => {
         mesh.rotation.y = yaw;
     });
 })
-// Lift player onto floor
+
+
+callbacks.onRemove("players", (playerState, sessionId)=>{
+    console.log("Player left:", sessionId);
+    
+    const mesh = playerMeshes.get(sessionId);
+
+    if (!mesh) return;
+
+    scene.remove(mesh);
+
+    mesh.geometry.dispose();
+
+    if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(mat => mat.dispose());
+    } else {
+        mesh.material.dispose();
+    }
+
+    playerMeshes.delete(sessionId);
+})
 
 // ---------------------------
 // Camera
