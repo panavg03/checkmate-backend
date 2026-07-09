@@ -1,9 +1,10 @@
 import express from "express";
-import { redis } from "./config/redis";
-import { createRateLimiter } from "./Middleware/rateLimiter";
+import process from "process";
+import { redis } from "./redis";
+import { createRateLimiter } from "./rateLimiter";
 
 const app = express();
-app.use(express.json()); 
+app.use(express.json());
 
 const flagLimiter = createRateLimiter(redis, {
   windowMs: 60_000,
