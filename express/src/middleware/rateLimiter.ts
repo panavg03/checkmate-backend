@@ -23,31 +23,34 @@ export function createRateLimiter(redis: Redis, options: RateLimitOptions) {
     const windowStart = now - windowMs;
 
     try {
-      const pipeline = redis.pipeline();
-      pipeline.zremrangebyscore(key, 0, windowStart);
-      pipeline.zcard(key);
-      pipeline.zadd(key, now, now.toString());
-      pipeline.expire(key, Math.ceil(windowMs / 1000));
+  const checkPipeline = redis.pipeline();
+  checkPipeline.zremrangebyscore(key, 0, windowStart);
+  checkPipeline.zcard(key);
+  const checkResults = await checkPipeline.exec();
+  const requestCount = checkResults?.[1]?.[1] as number;
 
-      const results = await pipeline.exec();
+  res.setHeader("X-RateLimit-Limit", max);
 
-      const requestCount = results?.[1]?.[1] as number;
+  if (requestCount >= max) {
+    res.setHeader("X-RateLimit-Remaining", 0);
+    res.setHeader("Retry-After", Math.ceil(windowMs / 1000));
+    return res.status(429).json({
+      error: message,
+      retryAfter: Math.ceil(windowMs / 1000),
+    });
+  }
 
-      res.setHeader("X-RateLimit-Limit", max);
-      res.setHeader("X-RateLimit-Remaining", Math.max(0, max - requestCount));
+  const recordPipeline = redis.pipeline();
+  recordPipeline.zadd(key, now, now.toString());
+  recordPipeline.expire(key, Math.ceil(windowMs / 1000));
+  await recordPipeline.exec();
 
-      if (requestCount >= max) {
-        res.setHeader("Retry-After", Math.ceil(windowMs / 1000));
-        return res.status(429).json({
-          error: message,
-          retryAfter: Math.ceil(windowMs / 1000),
-        });
-      }
+  res.setHeader("X-RateLimit-Remaining", Math.max(0, max - requestCount - 1));
 
-      next(); 
-    } catch (err) {
-      console.error("Rate limiter Redis error:", err);
-      next();
-    }
+  next();
+} catch (err) {
+  console.error("Rate limiter Redis error:", err);
+  next(); // fail open
+}
   };
 }

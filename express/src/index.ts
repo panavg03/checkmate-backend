@@ -1,7 +1,7 @@
 import express from "express";
 import process from "process";
-import { redis } from "./redis";
-import { createRateLimiter } from "./rateLimiter";
+import { redis } from "../../shared/db/redis";
+import { createRateLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 app.use(express.json());
