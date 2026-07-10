@@ -2,7 +2,7 @@ import pool from "../../../shared/db/pg";
 import { PartyService } from "../services/party.service";
 
 async function runTest() {
-    console.log("🚀 Starting Party Service Integration Tests...");
+    console.log(" Starting Party Service Integration Tests...");
 
     try {
         // 1. Ensure test users exist in user_auth
@@ -67,9 +67,9 @@ async function runTest() {
                 partyId: party.id,
                 userId: thirdUserId
             });
-            console.log("❌ Error: Exceeded capacity but request succeeded.");
+            console.log(" Error: Exceeded capacity but request succeeded.");
         } catch (err: any) {
-            console.log("✅ Expected failure succeeded:", err.message);
+            console.log(" Expected failure succeeded:", err.message);
         }
 
         // Clean up third user
@@ -93,9 +93,9 @@ async function runTest() {
                 userId: memberId,
                 password: "wrongpassword"
             });
-            console.log("❌ Error: Wrong password was accepted.");
+            console.log(" Error: Wrong password was accepted.");
         } catch (err: any) {
-            console.log("✅ Expected failure succeeded:", err.message);
+            console.log(" Expected failure succeeded:", err.message);
         }
 
         // Join with correct password
@@ -104,8 +104,8 @@ async function runTest() {
             partyId: privateParty.id,
             userId: memberId,
             password: "supersecretpassword"
-        });
-        console.log("✅ Joined private party successfully!");
+        })
+        console.log(" Joined private party successfully!");
 
         // 7. Test Member Leaving
         console.log(`\nTesting: Member leaving party ${privateParty.id}...`);
@@ -120,9 +120,9 @@ async function runTest() {
         
         try {
             await PartyService.getPartyDetails(privateParty.id);
-            console.log("❌ Error: Party was not deleted when empty.");
+            console.log(" Error: Party was not deleted when empty.");
         } catch (err: any) {
-            console.log("✅ Expected failure (party deleted):", err.message);
+            console.log(" Expected failure (party deleted):", err.message);
         }
 
         // Cleanup
@@ -130,9 +130,9 @@ async function runTest() {
             "test_leader@example.com",
             "test_member@example.com"
         ]);
-        console.log("\n🎉 All tests passed successfully!");
+        console.log("\n All tests passed successfully!");
     } catch (error) {
-        console.error("❌ Integration test failed:", error);
+        console.error(" Integration test failed:", error);
     } finally {
         // End the PG pool connection
         await pool.end();

@@ -30,24 +30,24 @@ async function scan() {
 
         try {
             await client.connect();
-            console.log(`✅ SUCCESS! Connected on Port: ${config.port}, User: "${config.user}", Password: "${config.password}"`);
+            console.log(` SUCCESS! Connected on Port: ${config.port}, User: "${config.user}", Password: "${config.password}"`);
             workingConfig = config;
             await client.end();
             break; // Stop at first successful config
         } catch (err: any) {
-            console.log(`❌ Failed: ${err.message}`);
+            console.log(` Failed: ${err.message}`);
         }
         console.log("-----------------------------------------");
     }
 
     if (workingConfig) {
-        console.log("\n💡 FOUND WORKING CONFIGURATION:");
+        console.log("\n FOUND WORKING CONFIGURATION:");
         console.log(`   DB_PORT=${workingConfig.port}`);
         console.log(`   DB_USER=${workingConfig.user}`);
         console.log(`   DB_PASSWORD=${workingConfig.password}`);
         console.log("\nUpdating your .env file with these working credentials...");
     } else {
-        console.log("\n❌ Could not connect using any common configuration.");
+        console.log("\n Could not connect using any common configuration.");
         console.log("Please check if the PostgreSQL database service is running on your machine.");
     }
     process.exit(0);
