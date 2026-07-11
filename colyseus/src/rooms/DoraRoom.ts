@@ -1,9 +1,16 @@
 import { Room, Client, CloseCode, Messages } from "colyseus";
-import { GameRoomState, Player } from "./schema/GameRoomState.js";
+import { DoraRoomState, Player } from "./schema/DoraRoomState.js";
 
 export class GameRoom extends Room {
     maxClients = 4;
-    state = new GameRoomState();
+    state = new DoraRoomState();
+
+    onCreate(options: any): void | Promise<any> {
+        let flags = ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"];
+        for(let flag of flags){
+            this.state.flags.set(flag, false);
+        }
+    }
     
     onJoin(client: Client, options: any) {
         //state syncing spawn
