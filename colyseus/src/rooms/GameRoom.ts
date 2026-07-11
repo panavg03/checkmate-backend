@@ -1,5 +1,6 @@
 import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
+import { teamRooms } from "../teamRegistry.js";
 
 const levelFlags: Record<string, string[]> = {
     "dora": ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"]
@@ -9,10 +10,27 @@ export class GameRoom extends Room {
     maxClients = 4;
     state = new GameRoomState();
     
+    onCreate(options: any) {
+        this.setMetadata({ teamId: options.teamId });
+        teamRooms.set(options.teamId, this.roomId);
+        console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
+    }
+
+    onDispose() {
+        teamRooms.delete(this.metadata?.teamId);
+        console.log("Room disposed for team:", this.metadata?.teamId);
+    }
+
     onJoin(client: Client, options: any) {
+        if (options.teamId !== this.metadata.teamId) {
+            client.leave(4000);
+            return;
+        }
+        
         //state syncing spawn
-        const tmp_p = new Player();
-        this.state.players.set(client.sessionId, tmp_p);
+        const player = new Player();
+        this.state.players.set(client.sessionId, player);
+
         console.log("A player joined", client.sessionId, this.state.players);
         client.send("welcome");
     }
