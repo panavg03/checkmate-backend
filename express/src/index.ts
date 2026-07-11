@@ -2,9 +2,12 @@ import express from "express";
 import process from "process";
 import { redis } from "../../shared/db/redis";
 import { createRateLimiter } from "./middleware/rateLimiter";
+import partyRoutes from "./routes/party.routes";
+
 
 const app = express();
 app.use(express.json());
+app.use("/party", partyRoutes);
 
 const flagLimiter = createRateLimiter(redis, {
   windowMs: 60_000,
