@@ -1,6 +1,6 @@
 import { defineServer, defineRoom } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
-import { GameRoom } from "./rooms/GameRoom.js";
+import { GameRoom } from "./rooms/GameRoom.js"
 import { teamRooms } from "./teamRegistry.js";
  
 const server = defineServer({

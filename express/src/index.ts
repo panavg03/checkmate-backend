@@ -22,7 +22,7 @@ const flagLimiter = createRateLimiter(redis, {
 app.use("/auth", authRouter);
 
 // Protected party management endpoints
-app.use("/parties", requireAuth, partyRouter);
+app.use("/party",partyRouter);
 
 // Profile endpoint to verify session details
 app.get("/me", requireAuth, (req, res) => {
