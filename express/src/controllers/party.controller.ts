@@ -154,3 +154,32 @@ export const getParty = (req: Request, res: Response): void => {
         });
     }
 };
+
+//kick player controller
+export const kickPlayer = (
+    req: Request,
+    res: Response
+): void => {
+
+    try {
+
+        const party = partyService.kickPlayer(req.body);
+
+        res.status(200).json({
+            success: true,
+            message: "Player kicked successfully.",
+            data: party,
+        });
+
+    } catch (error) {
+
+        res.status(400).json({
+            success: false,
+            message: error instanceof Error
+                ? error.message
+                : "Failed to kick player.",
+        });
+
+    }
+
+};

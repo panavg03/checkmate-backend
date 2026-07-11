@@ -4,7 +4,8 @@ import {
     PartyMember,
     CreatePartyInput,
     JoinPartyInput,
-    LeavePartyInput
+    LeavePartyInput,
+    KickPlayerInput
 } from "../models/party";
 
 const parties = new Map<string, Party>();
@@ -176,4 +177,38 @@ public leaveParty(input: LeavePartyInput): Party | null {
 
     return party;
 }
+
+/**
+ * Kick a player from the party
+ */
+public kickPlayer(input: KickPlayerInput): Party {
+
+    const party = parties.get(input.inviteCode);
+
+    if (!party) {
+        throw new Error("Party not found.");
+    }
+
+    // Only the leader can kick players
+    if (party.leaderId !== input.leaderId) {
+        throw new Error("Only the party leader can kick players.");
+    }
+
+    // Leader cannot kick themselves
+    if (input.leaderId === input.targetUserId) {
+        throw new Error("Leader cannot kick themselves.");
+    }
+
+    const memberIndex = party.members.findIndex(
+        member => member.userId === input.targetUserId
+    );
+
+    if (memberIndex === -1) {
+        throw new Error("Player is not in the party.");
+    }
+
+    party.members.splice(memberIndex, 1);
+
+    return party;
 }
+};
