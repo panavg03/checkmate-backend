@@ -4,6 +4,7 @@ import {
     PartyMember,
     CreatePartyInput,
     JoinPartyInput,
+    LeavePartyInput
 } from "../models/party";
 
 const parties = new Map<string, Party>();
@@ -120,6 +121,48 @@ public joinParty(input: JoinPartyInput): Party {
     };
 
     party.members.push(newMember);
+
+    return party;
+}
+
+/**
+ * Leave a party
+ */
+public leaveParty(input: LeavePartyInput): Party | null {
+
+    const party = parties.get(input.inviteCode);
+
+    if (!party) {
+        throw new Error("Party not found.");
+    }
+
+    const memberIndex = party.members.findIndex(
+        member => member.userId === input.userId
+    );
+
+    if (memberIndex === -1) {
+        throw new Error("User is not a member of this party.");
+    }
+
+    const leavingMember = party.members[memberIndex];
+
+    // Remove member
+    party.members.splice(memberIndex, 1);
+
+    // Delete party if empty
+    if (party.members.length === 0) {
+
+        parties.delete(input.inviteCode);
+
+        return null;
+    }
+
+    // Leader left → assign new leader
+    if (leavingMember.isLeader) {
+
+        party.members[0].isLeader = true;
+        party.leaderId = party.members[0].userId;
+    }
 
     return party;
 }
