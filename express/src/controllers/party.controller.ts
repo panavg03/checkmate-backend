@@ -128,3 +128,29 @@ export const leaveParty = (req: Request, res: Response): void => {
         });
     }
 };
+
+//get party controller
+export const getParty = (req: Request, res: Response): void => {
+
+    try {
+
+        const { inviteCode } = req.params;
+
+        const party = partyService.getParty(inviteCode);
+
+        res.status(200).json({
+            success: true,
+            data: party,
+        });
+
+    } catch (error) {
+
+        res.status(404).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : "Failed to fetch party",
+        });
+    }
+};
