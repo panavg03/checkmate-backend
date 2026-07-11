@@ -21,3 +21,9 @@ export interface CreatePartyInput {
     userId: string;
     username: string;
 }
+
+export interface JoinPartyInput {
+    inviteCode: string;
+    userId: string;
+    username: string;
+}

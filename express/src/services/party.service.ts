@@ -3,6 +3,7 @@ import {
     Party,
     PartyMember,
     CreatePartyInput,
+    JoinPartyInput,
 } from "../models/party";
 
 const parties = new Map<string, Party>();
@@ -81,4 +82,45 @@ export class PartyService {
     public getAllParties(): Party[] {
         return Array.from(parties.values());
     }
+
+    /**
+ * Join an existing party using invite code
+ */
+public joinParty(input: JoinPartyInput): Party {
+
+    const party = parties.get(input.inviteCode);
+
+    if (!party) {
+        throw new Error("Party not found.");
+    }
+
+    if (party.status !== "waiting") {
+        throw new Error("Game has already started.");
+    }
+
+    if (party.members.length >= party.maxPlayers) {
+        throw new Error("Party is full.");
+    }
+
+    const alreadyJoined = party.members.find(
+        member => member.userId === input.userId
+    );
+
+    if (alreadyJoined) {
+        throw new Error("User already joined this party.");
+    }
+
+    const newMember: PartyMember = {
+        userId: input.userId,
+        username: input.username,
+        joinedAt: new Date(),
+        isLeader: false,
+        isReady: false,
+        isConnected: true,
+    };
+
+    party.members.push(newMember);
+
+    return party;
+}
 }
