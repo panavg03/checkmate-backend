@@ -1,214 +1,139 @@
 import crypto from "crypto";
+import { CreatePartyInput, JoinPartyInput, Party, PartyMember } from "../models/party";
 import {
-    Party,
-    PartyMember,
-    CreatePartyInput,
-    JoinPartyInput,
-    LeavePartyInput,
-    KickPlayerInput
-} from "../models/party";
+    dbCreateParty,
+    dbGetParty,
+    dbGetPartyMembers,
+    dbAddMember,
+    dbRemoveMember,
+    dbDeleteParty,
+    dbUpdateLeader,
+} from "../../../shared/db/party";
 
-const parties = new Map<string, Party>();
+const MAX_PLAYERS = 4;
+
+function generateInviteCode(): string {
+    return crypto.randomBytes(3).toString("hex").toUpperCase();
+}
+
+function hashPassword(password: string): string {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+    return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, storedHash: string): boolean {
+    const [salt, hash] = storedHash.split(":");
+    if (!salt || !hash) return false;
+    const check = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+    return hash === check;
+}
+
+function httpError(message: string, status: number): Error {
+    const err = new Error(message);
+    (err as any).status = status;
+    return err;
+}
+
+export interface PartyDetails extends Party {
+    members: PartyMember[];
+}
 
 export class PartyService {
+    static async createParty(input: CreatePartyInput): Promise<Party> {
+        const maxPlayers = input.maxPlayers ?? MAX_PLAYERS;
+        if (maxPlayers < 1 || maxPlayers > MAX_PLAYERS) {
+            throw httpError(`maxPlayers must be between 1 and ${MAX_PLAYERS}`, 400);
+        }
 
-    /**
-     * Generate a unique 6-character invite code
-     */
-    private generateInviteCode(): string {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let code = "";
+        const name = input.name?.trim() || "Team";
+        const passwordHash =
+            input.password && input.password.trim() !== "" ? hashPassword(input.password) : null;
 
-        do {
-            code = "";
+        let id = generateInviteCode();
+        while (await dbGetParty(id)) {
+            id = generateInviteCode();
+        }
 
-            for (let i = 0; i < 6; i++) {
-                code += chars.charAt(
-                    Math.floor(Math.random() * chars.length)
-                );
-            }
+        await dbCreateParty({ id, name, passwordHash, leaderId: input.leaderId, maxPlayers });
 
-        } while (parties.has(code));
-
-        return code;
-    }
-
-    /**
-     * Create a new party
-     */
-    public createParty(input: CreatePartyInput): Party {
-
-        const inviteCode = this.generateInviteCode();
-
-        const leader: PartyMember = {
-            userId: input.userId,
-            username: input.username,
-            joinedAt: new Date(),
-            isLeader: true,
-            isReady: false,
-            isConnected: true,
-        };
-
-        const party: Party = {
-            id: crypto.randomUUID(),
-            inviteCode,
-            leaderId: input.userId,
-            members: [leader],
-            maxPlayers: 4,
-            status: "waiting",
+        return {
+            id,
+            name,
+            leaderId: input.leaderId,
+            maxPlayers,
+            hasPassword: passwordHash !== null,
             createdAt: new Date(),
         };
-
-        parties.set(inviteCode, party);
-
-        return party;
     }
 
-    /**
-     * Get party using invite code
-     */
-    /**
- * Get party details
- */
-    public getParty(inviteCode: string): Party {
+    static async joinParty(input: JoinPartyInput): Promise<void> {
+        const party = await dbGetParty(input.partyId);
+        if (!party) throw httpError("Party not found", 404);
 
-    const party = parties.get(inviteCode);
+        const members = await dbGetPartyMembers(input.partyId);
+        if (members.some((m) => m.userId === input.userId)) return;
 
-    if (!party) {
-        throw new Error("Party not found.");
+        if (members.length >= party.maxPlayers) throw httpError("Party is full", 400);
+
+        if (party.passwordHash) {
+            if (!input.password || !verifyPassword(input.password, party.passwordHash)) {
+                throw httpError("Incorrect password", 401);
+            }
+        }
+
+        await dbAddMember(input.partyId, input.userId);
     }
 
-    return party;
+    static async leaveParty(partyId: string, userId: string): Promise<void> {
+        const party = await dbGetParty(partyId);
+        if (!party) throw httpError("Party not found", 404);
+
+        const members = await dbGetPartyMembers(partyId);
+        if (!members.some((m) => m.userId === userId)) return;
+
+        await dbRemoveMember(partyId, userId);
+
+        const remaining = members.filter((m) => m.userId !== userId);
+        if (remaining.length === 0) {
+            await dbDeleteParty(partyId);
+        } else if (party.leaderId === userId) {
+            await dbUpdateLeader(partyId, remaining[0].userId);
+        }
     }
 
-    /**
-     * Delete a party
-     */
-    public deleteParty(inviteCode: string): boolean {
-        return parties.delete(inviteCode);
+    static async kickPlayer(partyId: string, leaderId: string, targetUserId: string): Promise<void> {
+        const party = await dbGetParty(partyId);
+        if (!party) throw httpError("Party not found", 404);
+
+        if (party.leaderId !== leaderId) throw httpError("Only the leader can kick players", 403);
+        if (leaderId === targetUserId) throw httpError("Leader cannot kick themselves", 400);
+
+        const members = await dbGetPartyMembers(partyId);
+        if (!members.some((m) => m.userId === targetUserId)) {
+            throw httpError("Player is not in the party", 404);
+        }
+
+        await dbRemoveMember(partyId, targetUserId);
     }
 
-    /**
-     * Get all active parties (mainly for debugging)
-     */
-    public getAllParties(): Party[] {
-        return Array.from(parties.values());
+    static async getPartyDetails(partyId: string): Promise<PartyDetails> {
+        const party = await dbGetParty(partyId);
+        if (!party) throw httpError("Party not found", 404);
+
+        const members = await dbGetPartyMembers(partyId);
+        return {
+            id: party.id,
+            name: party.name,
+            leaderId: party.leaderId,
+            maxPlayers: party.maxPlayers,
+            hasPassword: party.passwordHash !== null,
+            createdAt: party.createdAt,
+            members: members.map((m) => ({
+                userId: m.userId,
+                username: m.username,
+                joinedAt: m.joinedAt,
+            })),
+        };
     }
-
-    /**
- * Join an existing party using invite code
- */
-public joinParty(input: JoinPartyInput): Party {
-
-    const party = parties.get(input.inviteCode);
-
-    if (!party) {
-        throw new Error("Party not found.");
-    }
-
-    if (party.status !== "waiting") {
-        throw new Error("Game has already started.");
-    }
-
-    if (party.members.length >= party.maxPlayers) {
-        throw new Error("Party is full.");
-    }
-
-    const alreadyJoined = party.members.find(
-        member => member.userId === input.userId
-    );
-
-    if (alreadyJoined) {
-        throw new Error("User already joined this party.");
-    }
-
-    const newMember: PartyMember = {
-        userId: input.userId,
-        username: input.username,
-        joinedAt: new Date(),
-        isLeader: false,
-        isReady: false,
-        isConnected: true,
-    };
-
-    party.members.push(newMember);
-
-    return party;
 }
-
-/**
- * Leave a party
- */
-public leaveParty(input: LeavePartyInput): Party | null {
-
-    const party = parties.get(input.inviteCode);
-
-    if (!party) {
-        throw new Error("Party not found.");
-    }
-
-    const memberIndex = party.members.findIndex(
-        member => member.userId === input.userId
-    );
-
-    if (memberIndex === -1) {
-        throw new Error("User is not a member of this party.");
-    }
-
-    const leavingMember = party.members[memberIndex];
-
-    // Remove member
-    party.members.splice(memberIndex, 1);
-
-    // Delete party if empty
-    if (party.members.length === 0) {
-
-        parties.delete(input.inviteCode);
-
-        return null;
-    }
-
-    // Leader left → assign new leader
-    if (leavingMember.isLeader) {
-
-        party.members[0].isLeader = true;
-        party.leaderId = party.members[0].userId;
-    }
-
-    return party;
-}
-
-/**
- * Kick a player from the party
- */
-public kickPlayer(input: KickPlayerInput): Party {
-
-    const party = parties.get(input.inviteCode);
-
-    if (!party) {
-        throw new Error("Party not found.");
-    }
-
-    // Only the leader can kick players
-    if (party.leaderId !== input.leaderId) {
-        throw new Error("Only the party leader can kick players.");
-    }
-
-    // Leader cannot kick themselves
-    if (input.leaderId === input.targetUserId) {
-        throw new Error("Leader cannot kick themselves.");
-    }
-
-    const memberIndex = party.members.findIndex(
-        member => member.userId === input.targetUserId
-    );
-
-    if (memberIndex === -1) {
-        throw new Error("Player is not in the party.");
-    }
-
-    party.members.splice(memberIndex, 1);
-
-    return party;
-}
-};

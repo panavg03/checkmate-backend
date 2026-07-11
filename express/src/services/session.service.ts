@@ -2,7 +2,7 @@ import { redis } from "../../../shared/db/redis";
 import crypto from "crypto";
 
 export interface SessionData {
-  userId: number;
+  userId: string;
   email: string;
   username: string;
 }

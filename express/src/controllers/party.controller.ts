@@ -1,185 +1,90 @@
 import { Request, Response } from "express";
 import { PartyService } from "../services/party.service";
 
-const partyService = new PartyService();
+function fail(res: Response, error: any, fallback: string) {
+    return res
+        .status(error?.status || 500)
+        .json({ success: false, message: error?.message || fallback });
+}
 
-// Create party controller
-export const createParty = (req: Request, res: Response): void => {
-    try {
+export class PartyController {
+    static async createParty(req: Request, res: Response) {
+        try {
+            const leaderId = req.user!.userId;
+            const { name, password, maxPlayers } = req.body ?? {};
 
-        const { userId, username } = req.body;
+            const party = await PartyService.createParty({ leaderId, name, password, maxPlayers });
 
-        if (!userId || !username) {
-            res.status(400).json({
-                success: false,
-                message: "userId and username are required"
-            });
-            return;
+            return res.status(201).json({ success: true, data: party });
+        } catch (error) {
+            return fail(res, error, "Failed to create party");
         }
-
-        const party = partyService.createParty({
-            userId,
-            username,
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Party created successfully",
-            data: party,
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to create party",
-        });
-
     }
-};
-//join party controller
 
-export const joinParty = (req: Request, res: Response): void => {
+    static async joinParty(req: Request, res: Response) {
+        try {
+            const userId = req.user!.userId;
+            const { partyId, inviteCode, password } = req.body ?? {};
+            const id = partyId || inviteCode;
 
-    try {
+            if (!id) {
+                return res.status(400).json({ success: false, message: "partyId is required" });
+            }
 
-        const { inviteCode, userId, username } = req.body;
+            await PartyService.joinParty({ partyId: id, userId, password });
+            const data = await PartyService.getPartyDetails(id);
 
-        if (!inviteCode || !userId || !username) {
-
-            res.status(400).json({
-                success: false,
-                message: "inviteCode, userId and username are required",
-            });
-
-            return;
+            return res.status(200).json({ success: true, data });
+        } catch (error) {
+            return fail(res, error, "Failed to join party");
         }
-
-        const party = partyService.joinParty({
-            inviteCode,
-            userId,
-            username,
-        });
-
-        res.status(200).json({
-            success: true,
-            message: "Joined party successfully",
-            data: party,
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            success: false,
-            message:
-                error instanceof Error
-                    ? error.message
-                    : "Failed to join party",
-        });
     }
-};
 
-//leave party controller
-export const leaveParty = (req: Request, res: Response): void => {
+    static async leaveParty(req: Request, res: Response) {
+        try {
+            const userId = req.user!.userId;
+            const { partyId } = req.params;
 
-    try {
+            if (!partyId) {
+                return res.status(400).json({ success: false, message: "partyId is required" });
+            }
 
-        const { inviteCode, userId } = req.body;
+            await PartyService.leaveParty(partyId, userId);
 
-        if (!inviteCode || !userId) {
-
-            res.status(400).json({
-                success: false,
-                message: "inviteCode and userId are required",
-            });
-
-            return;
+            return res.status(200).json({ success: true, message: "Left party" });
+        } catch (error) {
+            return fail(res, error, "Failed to leave party");
         }
+    }
 
-        const party = partyService.leaveParty({
-            inviteCode,
-            userId,
-        });
+    static async kickPlayer(req: Request, res: Response) {
+        try {
+            const leaderId = req.user!.userId;
+            const { partyId, targetUserId } = req.body ?? {};
 
-        if (!party) {
+            if (!partyId || !targetUserId) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "partyId and targetUserId are required" });
+            }
 
-            res.status(200).json({
-                success: true,
-                message: "Party deleted because all members left.",
-            });
+            await PartyService.kickPlayer(partyId, leaderId, targetUserId);
+            const data = await PartyService.getPartyDetails(partyId);
 
-            return;
+            return res.status(200).json({ success: true, data });
+        } catch (error) {
+            return fail(res, error, "Failed to kick player");
         }
-
-        res.status(200).json({
-            success: true,
-            message: "Left party successfully",
-            data: party,
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            success: false,
-            message:
-                error instanceof Error
-                    ? error.message
-                    : "Failed to leave party",
-        });
-    }
-};
-
-//get party controller
-export const getParty = (req: Request, res: Response): void => {
-
-    try {
-
-        const { inviteCode } = req.params;
-
-        const party = partyService.getParty(inviteCode);
-
-        res.status(200).json({
-            success: true,
-            data: party,
-        });
-
-    } catch (error) {
-
-        res.status(404).json({
-            success: false,
-            message:
-                error instanceof Error
-                    ? error.message
-                    : "Failed to fetch party",
-        });
-    }
-};
-
-//kick player controller
-export const kickPlayer = (
-    req: Request,
-    res: Response
-): void => {
-
-    try {
-
-        const party = partyService.kickPlayer(req.body);
-
-        res.status(200).json({
-            success: true,
-            message: "Player kicked successfully.",
-            data: party,
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            success: false,
-            message: error instanceof Error
-                ? error.message
-                : "Failed to kick player.",
-        });
-
     }
 
-};
+    static async getParty(req: Request, res: Response) {
+        try {
+            const { partyId } = req.params;
+            const data = await PartyService.getPartyDetails(partyId);
+
+            return res.status(200).json({ success: true, data });
+        } catch (error) {
+            return fail(res, error, "Failed to fetch party");
+        }
+    }
+}
