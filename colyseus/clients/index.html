@@ -9,15 +9,61 @@
         body {
             margin: 0;
             overflow: hidden;
+            font-family: sans-serif;
+            background: #1e1e1e;
         }
 
         canvas {
             display: block;
         }
+
+        #lobby {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1e1e1e;
+            color: white;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        #lobby h2 { margin: 0 0 8px; }
+
+        #lobby input {
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            width: 240px;
+        }
+
+        #lobby button {
+            padding: 10px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+
+        #lobby button:hover { background: #2563eb; }
+
+        #lobby p { color: #f87171; font-size: 14px; margin: 0; }
     </style>
 </head>
 
 <body>
+    <div id="lobby">
+        <h2>🎮 Enter Team ID</h2>
+        <input id="team-id-input" type="text" placeholder="e.g. team_abc123" />
+        <button id="join-btn">Join Game</button>
+        <p id="error-msg"></p>
+    </div>
     <script type="module" src="/main.js"></script>
 </body>
 </html>

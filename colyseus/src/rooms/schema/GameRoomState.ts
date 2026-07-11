@@ -10,3 +10,4 @@ export class Player extends Schema{
 export class GameRoomState extends Schema {
     @type({map: Player}) players = new MapSchema<Player>();
 }
+ 

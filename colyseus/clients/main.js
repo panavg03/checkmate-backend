@@ -1,11 +1,69 @@
 import * as THREE from "three";
 import { Client, Callbacks } from "@colyseus/sdk";
- 
+
 const client = new Client("http://localhost:2567");
 
-const room_connect = await client.joinOrCreate("gameroom");
-console.log(room_connect.roomId);
-console.log(room_connect.state);
+// ---- Lobby / Team ID join ----
+
+const lobbyEl    = document.getElementById("lobby");
+const inputEl    = document.getElementById("team-id-input");
+const joinBtn    = document.getElementById("join-btn");
+const errorEl    = document.getElementById("error-msg");
+
+let room_connect;
+
+joinBtn.addEventListener("click", async () => {
+    const teamId = inputEl.value.trim();
+
+    if (!teamId) {
+        errorEl.textContent = "Please enter a team ID.";
+        return;
+    }
+
+    joinBtn.disabled = true;
+    errorEl.textContent = "Connecting...";
+
+    try {
+        // Step 1: Ask server if a room already exists for this team
+        const resp = await fetch(`http://localhost:2567/find-room?teamId=${encodeURIComponent(teamId)}`);
+        const data = await resp.json();
+
+        if (data.status === "not_found") {
+            // No room yet — create one for this team
+            room_connect = await client.create("gameroom", { teamId });
+            console.log("Created new room:", room_connect.roomId, "| Team:", teamId);
+
+        } else if (data.status === "found") {
+            // Room exists — join it by its specific ID
+            try {
+                room_connect = await client.joinById(data.roomId, { teamId });
+                console.log("Joined existing room:", data.roomId, "| Team:", teamId);
+            } catch (e) {
+                // joinById throws if room is full (maxClients reached)
+                errorEl.textContent = "❌ Room is full! Max 4 players per team.";
+                joinBtn.disabled = false;
+                return;
+            }
+
+        } else {
+            errorEl.textContent = "❌ Unexpected server response.";
+            joinBtn.disabled = false;
+            return;
+        }
+
+        lobbyEl.style.display = "none";
+        startGame();
+
+    } catch (e) {
+        console.error(e);
+        errorEl.textContent = "❌ Failed to connect. Is the server running?";
+        joinBtn.disabled = false;
+    }
+});
+
+
+
+function startGame() {
 
 const callbacks = Callbacks.get(room_connect);
 
@@ -338,3 +396,5 @@ function animate() {
 }
 
 animate();
+
+} // end startGame()
