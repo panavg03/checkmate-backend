@@ -14,14 +14,14 @@ const pool = new Pool({
  *  Issue log kardega application ke starting mein
 */
 
-async function connectToDatabase(){
-    try{
-    const client = await pool.connect();
-    console.log("Connected to Database : Lesgoooooooo");
-    }catch (error){
-        console.error("oh hell nah");
+async function connectToDatabase() {
+    try {
+        const client = await pool.connect();
+        console.log("Connected to Database : Lesgoooooooo");
+        client.release(); // Release the client back to the pool to prevent leakage
+    } catch (error) {
+        console.error("Database connection failed: oh hell nah", error);
     }
-    
 }
 
 connectToDatabase();
