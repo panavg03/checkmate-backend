@@ -32,3 +32,9 @@ export interface LeavePartyInput {
     inviteCode: string;
     userId: string;
 }
+
+export interface KickPlayerInput {
+    inviteCode: string;
+    leaderId: string;
+    targetUserId: string;
+}
