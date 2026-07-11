@@ -78,3 +78,53 @@ export const joinParty = (req: Request, res: Response): void => {
         });
     }
 };
+
+//leave party controller
+export const leaveParty = (req: Request, res: Response): void => {
+
+    try {
+
+        const { inviteCode, userId } = req.body;
+
+        if (!inviteCode || !userId) {
+
+            res.status(400).json({
+                success: false,
+                message: "inviteCode and userId are required",
+            });
+
+            return;
+        }
+
+        const party = partyService.leaveParty({
+            inviteCode,
+            userId,
+        });
+
+        if (!party) {
+
+            res.status(200).json({
+                success: true,
+                message: "Party deleted because all members left.",
+            });
+
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Left party successfully",
+            data: party,
+        });
+
+    } catch (error) {
+
+        res.status(400).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : "Failed to leave party",
+        });
+    }
+};
