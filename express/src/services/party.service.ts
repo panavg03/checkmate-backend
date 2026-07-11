@@ -66,8 +66,18 @@ export class PartyService {
     /**
      * Get party using invite code
      */
-    public getParty(inviteCode: string): Party | undefined {
-        return parties.get(inviteCode);
+    /**
+ * Get party details
+ */
+    public getParty(inviteCode: string): Party {
+
+    const party = parties.get(inviteCode);
+
+    if (!party) {
+        throw new Error("Party not found.");
+    }
+
+    return party;
     }
 
     /**
