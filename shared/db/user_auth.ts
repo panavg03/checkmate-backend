@@ -1,7 +1,7 @@
 import pool from './pg.js';
 
 export interface UserAuthRecord {
-  userid: number;
+  userid: string;
   googleid: string;
   email: string;
   username: string;

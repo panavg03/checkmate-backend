@@ -2,39 +2,26 @@ export interface PartyMember {
     userId: string;
     username: string;
     joinedAt: Date;
-    isLeader: boolean;
-    isReady: boolean;
-    isConnected: boolean;
 }
 
 export interface Party {
     id: string;
-    inviteCode: string;
+    name: string;
     leaderId: string;
-    members: PartyMember[];
     maxPlayers: number;
-    status: "waiting" | "starting" | "playing" | "finished";
+    hasPassword: boolean;
     createdAt: Date;
 }
 
 export interface CreatePartyInput {
-    userId: string;
-    username: string;
+    leaderId: string;
+    name?: string;
+    password?: string;
+    maxPlayers?: number;
 }
 
 export interface JoinPartyInput {
-    inviteCode: string;
+    partyId: string;
     userId: string;
-    username: string;
-}
-
-export interface LeavePartyInput {
-    inviteCode: string;
-    userId: string;
-}
-
-export interface KickPlayerInput {
-    inviteCode: string;
-    leaderId: string;
-    targetUserId: string;
+    password?: string;
 }
