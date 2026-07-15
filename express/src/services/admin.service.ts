@@ -1,4 +1,4 @@
-import { pool } from "../config/db.js";
+import pool from "../../../shared/db/pg.js";
 import type { UserAuthRecord } from "../types/auth.types.js";
 import { Role } from "../types/auth.types.js";
 

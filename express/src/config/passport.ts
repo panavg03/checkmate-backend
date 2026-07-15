@@ -1,14 +1,14 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { env } from "./env.js";
+
 import type { GoogleProfilePayload } from "../types/auth.types.js";
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: env.googleClientId,
-      clientSecret: env.googleClientSecret,
-      callbackURL: env.googleRedirectUri,
+      clientID: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      callbackURL: process.env.GOOGLE_REDIRECT_URI as string,
       scope: ["profile", "email"],
     },
     (_accessToken, _refreshToken, profile, done) => {
