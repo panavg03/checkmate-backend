@@ -1,0 +1,21 @@
+import type { Request, Response, NextFunction } from "express";
+import { Role } from "../types/auth.types.js";
+
+function requireRole(role: Role) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    if ((req.user.role as Role) !== role) {
+      res.status(403).json({ error: "Insufficient permissions" });
+      return;
+    }
+
+    next();
+  };
+}
+
+export const requireAdmin = requireRole(Role.ADMIN);
+export const requirePlayer = requireRole(Role.PLAYER);

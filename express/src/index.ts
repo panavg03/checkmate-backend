@@ -5,11 +5,14 @@ import { redis } from "../../shared/db/redis";
 import { createRateLimiter } from "./middleware/rateLimiter";
 import partyRouter from "./routes/party.routes";
 import authRouter from "./routes/auth.routes";
-import { requireAuth } from "./middleware/auth";
+import passport from "./config/passport";
+import { authenticateUser } from "./middleware/authenticateUser";
+import adminRouter from "./routes/admin.routes";
 
 const app = express();
 app.use(express.json());
-app.use(cookieParser()); // Enables parsing session cookies
+app.use(cookieParser());
+app.use(passport.initialize()); // Stateless — no passport.session()
 
 const flagLimiter = createRateLimiter(redis, {
   windowMs: 60_000,
@@ -18,16 +21,16 @@ const flagLimiter = createRateLimiter(redis, {
   message: "Too many flag attempts. Wait a minute.",
 });
 
-// Auth endpoints (login, callback, logout)
+// Auth endpoints (login, callback, logout, /me)
 app.use("/auth", authRouter);
 
-// Protected party management endpoints
-app.use("/party", requireAuth, partyRouter);
+// Admin endpoints (user management, party overrides) — admin-only
+app.use("/admin", adminRouter);
 
-// Profile endpoint to verify session details
-app.get("/me", requireAuth, (req, res) => {
-  res.json({ user: req.user });
-});
+// Protected party management endpoints
+app.use("/party", authenticateUser, partyRouter);
+
+// /me endpoint now lives in auth.routes.ts as GET /auth/me
 
 app.post("/submit", flagLimiter, (req, res) => {
   res.json({ ok: true, message: "flag received" });
