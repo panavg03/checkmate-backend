@@ -44,7 +44,7 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
       path: "/",
     });
 
-    res.redirect(env.frontendUrl);
+    res.redirect(`${env.frontendUrl}/auth#token=${encodeURIComponent(token)}`);
   } catch (error) {
     console.error("Google callback error:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -8,7 +8,13 @@ export function authenticateUser(
   res: Response,
   next: NextFunction
 ): void {
-  const token: string | undefined = req.cookies?.[TOKEN_COOKIE];
+  const authHeader = req.headers.authorization;
+  const bearerToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length)
+      : undefined;
+
+  const token: string | undefined = bearerToken ?? req.cookies?.[TOKEN_COOKIE];
 
   if (!token) {
     res.status(401).json({ error: "Authentication required" });
