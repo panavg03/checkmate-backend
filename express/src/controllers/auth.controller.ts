@@ -41,7 +41,7 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
     res.cookie(TOKEN_COOKIE, token, {
       httpOnly: true,
       secure: env.nodeEnv === "production",
-      sameSite: "lax",
+      sameSite: env.nodeEnv === "production" ? "none" : "lax",
       domain: env.cookieDomain,
       maxAge: COOKIE_MAX_AGE_MS,
       path: "/",
@@ -58,7 +58,7 @@ export function logout(_req: Request, res: Response): void {
   res.clearCookie(TOKEN_COOKIE, {
     httpOnly: true,
     secure: env.nodeEnv === "production",
-    sameSite: "lax",
+    sameSite: env.nodeEnv === "production" ? "none" : "lax",
     domain: env.cookieDomain,
     path: "/",
   });

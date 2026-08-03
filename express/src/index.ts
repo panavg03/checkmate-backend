@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import process from "process";
 import { redis } from "../../shared/db/redis";
@@ -10,6 +11,7 @@ import { authenticateUser } from "./middleware/authenticateUser";
 import adminRouter from "./routes/admin.routes";
 
 const app = express();
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize()); // Stateless — no passport.session()
