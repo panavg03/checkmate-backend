@@ -6,16 +6,47 @@ export async function findUserByGoogleIdAndEmail(
   email: string
 ): Promise<UserAuthRecord | null> {
   const result = await pool.query<UserAuthRecord>(
-    `SELECT * FROM user_auth WHERE "googleId" = $1 AND email = $2 LIMIT 1`,
+    `SELECT * FROM user_auth WHERE googleid = $1 AND email = $2 LIMIT 1`,
     [googleId, email]
   );
 
   return result.rows[0] ?? null;
 }
 
-export async function updateLastLogin(userId: number): Promise<void> {
+export async function createUser(
+  googleId: string,
+  email: string,
+  _displayName: string
+): Promise<UserAuthRecord> {
+  const baseUsername = (email.split("@")[0] || "user").slice(0, 40);
+
+  try {
+    const result = await pool.query<UserAuthRecord>(
+      `INSERT INTO user_auth (googleid, email, username, lastlogin)
+       VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+       RETURNING *`,
+      [googleId, email, baseUsername]
+    );
+    return result.rows[0];
+  } catch (error: any) {
+    if (error.code === "23505") {
+      const uniqueUsername = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+      const result = await pool.query<UserAuthRecord>(
+        `INSERT INTO user_auth (googleid, email, username, lastlogin)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+         ON CONFLICT (googleid) DO UPDATE SET lastlogin = CURRENT_TIMESTAMP
+         RETURNING *`,
+        [googleId, email, uniqueUsername]
+      );
+      return result.rows[0];
+    }
+    throw error;
+  }
+}
+
+export async function updateLastLogin(userId: string): Promise<void> {
   await pool.query(
-    `UPDATE user_auth SET "lastLogin" = CURRENT_TIMESTAMP WHERE "userId" = $1`,
+    `UPDATE user_auth SET lastlogin = CURRENT_TIMESTAMP WHERE userid = $1`,
     [userId]
   );
 }

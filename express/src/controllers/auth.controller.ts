@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
-import { findUserByGoogleIdAndEmail, updateLastLogin } from "../services/auth.service.js";
+import { findUserByGoogleIdAndEmail, createUser, updateLastLogin } from "../services/auth.service.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { Role } from "../types/auth.types.js";
 import type { GoogleProfilePayload, JwtPayload } from "../types/auth.types.js";
@@ -17,13 +17,10 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const user = await findUserByGoogleIdAndEmail(profile.googleId, profile.email);
+    let user = await findUserByGoogleIdAndEmail(profile.googleId, profile.email);
 
     if (!user) {
-      res.status(401).json({
-        error: "User not registered. Please register through the portal first.",
-      });
-      return;
+      user = await createUser(profile.googleId, profile.email, profile.displayName);
     }
 
     const payload: JwtPayload = {
