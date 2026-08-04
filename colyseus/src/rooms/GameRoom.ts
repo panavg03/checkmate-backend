@@ -11,9 +11,9 @@ export class GameRoom extends Room {
     state = new GameRoomState();
     
     onCreate(options: any) {
-        this.setMetadata({ teamId: options.teamId });
+        /*this.setMetadata({ teamId: options.teamId });
         teamRooms.set(options.teamId, this.roomId);
-        console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
+        console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);*/
     }
 
     onDispose() {
@@ -22,10 +22,10 @@ export class GameRoom extends Room {
     }
 
     onJoin(client: Client, options: any) {
-        if (options.teamId !== this.metadata.teamId) {
+        /*if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
-        }
+        }*/
         
         //state syncing spawn
         const player = new Player();
