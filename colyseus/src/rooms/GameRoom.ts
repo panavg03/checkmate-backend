@@ -3,7 +3,7 @@ import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 
 const levelFlags: Record<string, string[]> = {
-    "dora": ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"]
+    "doraemon": ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"]
 }
 
 export class GameRoom extends Room {
@@ -75,7 +75,6 @@ export class GameRoom extends Room {
             for(let flag of flags){
                 this.state.flags.set(flag, false);
             }
-            //change coordinates to level spawn
         },
         "complete": (client: Client) => {
             //reset flags to lobby flags
