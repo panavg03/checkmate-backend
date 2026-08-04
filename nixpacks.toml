@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = [
+  "cd shared/db && npm install --include=dev",
+  "cd express && npm install --include=dev"
+]
+
+[start]
+cmd = "cd express && npx tsx src/index.ts"
