@@ -71,10 +71,10 @@ export class GameRoom extends Room {
         "start": (client: Client, payload: string) => {
             //syncing flags
             this.state.level = payload;
-            let flags = levelFlags[this.state.level];
-            for(let flag of flags){
-                this.state.flags.set(flag, false);
-            }
+            // let flags = levelFlags[this.state.level];
+            // for(let flag of flags){
+            //     this.state.flags.set(flag, false);
+            // }
         },
         "complete": (client: Client) => {
             //reset flags to lobby flags
