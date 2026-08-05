@@ -87,6 +87,7 @@ export class GameRoom extends Room {
                 this.state.players.set(key, value);
             });
 
+            this.broadcast("start", { levelName: payload });
         },
         "complete": (client: Client) => {
             //reset flags to lobby flags
