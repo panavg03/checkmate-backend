@@ -7,7 +7,7 @@ const levelFlags: Record<string, string[]> = {
 }
 
 const levelCoords: Record<string, number[]> = {
-    "Level1": [0, 2, 18]
+    "Level1": [0, 3, 18]
 }
 
 export class GameRoom extends Room {
