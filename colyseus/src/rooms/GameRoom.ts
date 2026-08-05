@@ -6,6 +6,10 @@ const levelFlags: Record<string, string[]> = {
     "doraemon": ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"]
 }
 
+const levelCoords: Record<string, number[]> = {
+    "Level1": [0, 2, 18]
+}
+
 export class GameRoom extends Room {
     maxClients = 4;
     state = new GameRoomState();
@@ -75,6 +79,14 @@ export class GameRoom extends Room {
             // for(let flag of flags){
             //     this.state.flags.set(flag, false);
             // }
+            let [x,y,z] = levelCoords[payload];
+            this.state.players.forEach((value: Player, key: any) => {
+                value.x = x;
+                value.y = y;
+                value.z = z;
+                this.state.players.set(key, value);
+            });
+
         },
         "complete": (client: Client) => {
             //reset flags to lobby flags
