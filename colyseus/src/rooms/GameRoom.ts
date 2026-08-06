@@ -21,10 +21,10 @@ export class GameRoom extends Room {
     }
 
     onJoin(client: Client, options: any) {
-        /*if (options.teamId !== this.metadata.teamId) {
+        if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
-        }*/
+        }
         //state syncing spawn
         const player = new Player();
         this.state.players.set(client.sessionId, player);

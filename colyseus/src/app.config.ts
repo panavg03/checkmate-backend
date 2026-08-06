@@ -6,7 +6,7 @@ import { teamRooms } from "./teamRegistry.js";
 const server = defineServer({
     transport: new WebSocketTransport(),
     rooms: {
-        gameroom: defineRoom(GameRoom),  
+        gameroom: defineRoom(GameRoom).filterBy(['teamId']),  
     },
     express: (app) => {
         app.get("/", (req, res) => {
