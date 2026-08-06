@@ -13,14 +13,7 @@ const server = defineServer({
             res.send("running colyseus server");
         });
 
-        /**
-         * GET /find-room?teamId=xxx
-         * Returns:
-         *   { status: "not_found" }              → no room yet, client should create
-         *   { status: "found", roomId: "..." }   → room exists, client should joinById
-         *   { status: "full" }                   → room exists but is full (4/4)
-         */
-        app.get("/find-room", (req, res) => {
+        /*app.get("/join-create-room", (req, res) => {
             const teamId = req.query.teamId as string;
 
             if (!teamId) {
@@ -36,7 +29,7 @@ const server = defineServer({
             }
 
             res.json({ status: "found", roomId });
-        });
+        });*/
     }
 });
 

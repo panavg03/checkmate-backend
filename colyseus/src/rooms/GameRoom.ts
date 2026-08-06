@@ -1,31 +1,22 @@
 import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
+import {levelFlags, levelCoords}  from "./GameConsts.js";
 
-const levelFlags: Record<string, string[]> = {
-    "doraemon": ["TRANSLATE", "LOCKER_OPEN", "BIGLIGHT", "LARGE_DOOR"]
-}
-
-const levelCoords: Record<string, number[]> = {
-    "Level1": [0, 3, 18],
-    "Level2": [0, 0, 0],
-    "Level3": [0, 0, 0],
-    "Level4": [0, 0, 0],
-    "Lobby": [-3, 2, -16]
-}
+let tmpCache: Record<string, any> = {};
 
 export class GameRoom extends Room {
     maxClients = 4;
     state = new GameRoomState();
     
     onCreate(options: any) {
-        /*this.setMetadata({ teamId: options.teamId });
-        teamRooms.set(options.teamId, this.roomId);
-        console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);*/
+        this.setMetadata({ teamId: options.teamId });
+        console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
+        tmpCache[options.teamId]=true;
     }
 
     onDispose() {
-        teamRooms.delete(this.metadata?.teamId);
+        delete tmpCache[this.metadata.teamId];
         console.log("Room disposed for team:", this.metadata?.teamId);
     }
 
@@ -34,7 +25,6 @@ export class GameRoom extends Room {
             client.leave(4000);
             return;
         }*/
-        
         //state syncing spawn
         const player = new Player();
         this.state.players.set(client.sessionId, player);
