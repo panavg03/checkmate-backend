@@ -81,12 +81,10 @@ export class GameRoom extends Room {
                 this.state.players.set(key, value);
             });
 
-            // afterNextPatch: true delays this broadcast until AFTER the state patch above
-            // has actually been flushed to all clients. Without this, clients could receive
-            // this message (and call SceneManager.LoadScene) before their room.State.players
-            // reflects the new x/y/z, causing the local player to spawn at a stale position
-            // and fall out of the map.
             this.broadcast("start", { levelName: payload }, { afterNextPatch: true });
+        },
+        "despawn": (client: Client, itemName: string) => {
+            this.broadcast("despawn", {itemName: itemName}, {afterNextPatch: true});
         },
         "complete": (client: Client) => {
             //reset flags to lobby flags
