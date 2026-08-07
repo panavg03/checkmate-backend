@@ -19,5 +19,6 @@ export class GameRoomState extends Schema {
     @type({map: Player}) players = new MapSchema<Player>();
     //@type({map: Item}) items = new MapSchema<Player>();
     @type({map: "boolean"}) flags = new MapSchema<boolean>();
-    @type("string") level = "lobby";
+    @type({map: "boolean"}) completed = new MapSchema<boolean>();
+    @type("string") level = "Lobby";
 }

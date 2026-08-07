@@ -1,7 +1,7 @@
 import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
-import {levelFlags, levelCoords}  from "./GameConsts.js";
+import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
 import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
 
 let tmpCache: Record<string, any> = {};
@@ -14,6 +14,10 @@ export class GameRoom extends Room {
         this.setMetadata({ teamId: options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
         tmpCache[options.teamId]=true;
+
+        for(let levelName of levelNames){
+            this.state.completed.set(levelName, false);
+        }
     }
 
     onDispose() {
@@ -68,22 +72,46 @@ export class GameRoom extends Room {
             this.state.flags.set(payload.flag, payload.value);
         },
         "start": (client: Client, payload: string) => {
-            if(this.state.level != "lobby" && payload == "lobby") updateTeamScore(this.metadata.teamId);
-            //syncing flags
-            this.state.level = payload;
-            // let flags = levelFlags[this.state.level];
-            // for(let flag of flags){
-            //     this.state.flags.set(flag, false);
-            // }
-            let [x,y,z] = levelCoords[payload];
-            this.state.players.forEach((value: Player, key: any) => {
-                value.x = x;
-                value.y = y;
-                value.z = z;
-                this.state.players.set(key, value);
-            });
+            if(payload=="Lobby"){
+                this.state.completed.set(this.state.level, true);
+                updateTeamScore(this.metadata.teamId)
 
-            this.broadcast("start", { levelName: payload }, { afterNextPatch: true });
+                this.state.level = payload;
+
+                let [x, y, z] = levelCoords[payload];
+
+                let index = 0;
+                const total = this.state.players.size;
+                this.state.players.forEach((value: Player, key: any) => {
+                    const angle = (index / total) * Math.PI * 2;
+                    const radius = 1.5;
+                    value.x = x + Math.cos(angle) * radius;
+                    value.y = y;
+                    value.z = z + Math.sin(angle) * radius;
+                    this.state.players.set(key, value);
+                    index++;
+                });
+
+                this.broadcast("start", { levelName: payload }, { afterNextPatch: true });
+            }else if(this.state.completed.get(payload)==false){ 
+                this.state.level = payload;
+
+                let [x, y, z] = levelCoords[payload];
+
+                let index = 0;
+                const total = this.state.players.size;
+                this.state.players.forEach((value: Player, key: any) => {
+                    const angle = (index / total) * Math.PI * 2;
+                    const radius = 1.5;
+                    value.x = x + Math.cos(angle) * radius;
+                    value.y = y;
+                    value.z = z + Math.sin(angle) * radius;
+                    this.state.players.set(key, value);
+                    index++;
+                });
+
+                this.broadcast("start", { levelName: payload }, { afterNextPatch: true });
+            }
         },
         "despawn": (client: Client, itemName: string) => {
             this.broadcast("despawn", {itemName: itemName}, {afterNextPatch: true});
@@ -96,10 +124,10 @@ export class GameRoom extends Room {
             //change coordinates to lobby spawn
         },
         "getlb": (client: Client) => {
-            this.broadcast("lb_result", {lb: getAllTeamScores()});
+            client.send("lb_result", {lb: getAllTeamScores()});
         },
         "getscore": (client: Client) => {
-            client.send("score_res", {score: getTeamScore(this.metadata.teamId)});
+            this.broadcast("score_res", {score: getTeamScore(this.metadata.teamId)});
         }
     }
 }

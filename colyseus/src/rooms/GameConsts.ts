@@ -15,3 +15,5 @@ export const levelCoords: Record<string, number[]> = {
     "Level4": [0, 0, 0],
     "Lobby": [-3, 2, -16]
 }
+
+export const levelNames = ["Level1", "Level2", "Level3", "Level4"];
