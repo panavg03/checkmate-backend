@@ -2,6 +2,7 @@ import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords}  from "./GameConsts.js";
+import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
 
 let tmpCache: Record<string, any> = {};
 
@@ -67,6 +68,7 @@ export class GameRoom extends Room {
             this.state.flags.set(payload.flag, payload.value);
         },
         "start": (client: Client, payload: string) => {
+            if(this.state.level != "lobby" && payload == "lobby") updateTeamScore(this.metadata.teamId);
             //syncing flags
             this.state.level = payload;
             // let flags = levelFlags[this.state.level];
@@ -92,6 +94,12 @@ export class GameRoom extends Room {
                 this.state.flags.delete(key);
             });
             //change coordinates to lobby spawn
+        },
+        "getlb": (client: Client) => {
+            client.send("lb_result", {lb: getAllTeamScores()});
+        },
+        "getscore": (client: Client) => {
+            client.send("score_res", {score: getTeamScore(this.metadata.teamId)});
         }
     }
 }
