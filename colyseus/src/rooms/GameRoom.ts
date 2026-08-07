@@ -62,9 +62,9 @@ export class GameRoom extends Room {
             player.yaw = payload.yaw;
             //this.state.players.set(client.sessionId, player);
         },
-        "quest": (client: Client, payload: string) => {
+        "quest": (client: Client, payload: any) => {
             //syncing flags
-            this.state.flags.set(payload, true);
+            this.state.flags.set(payload.flag, payload.value);
         },
         "start": (client: Client, payload: string) => {
             //syncing flags
