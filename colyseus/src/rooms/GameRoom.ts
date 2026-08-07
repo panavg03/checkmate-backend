@@ -96,7 +96,7 @@ export class GameRoom extends Room {
             //change coordinates to lobby spawn
         },
         "getlb": (client: Client) => {
-            client.send("lb_result", {lb: getAllTeamScores()});
+            this.broadcast("lb_result", {lb: getAllTeamScores()});
         },
         "getscore": (client: Client) => {
             client.send("score_res", {score: getTeamScore(this.metadata.teamId)});
