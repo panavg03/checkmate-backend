@@ -1,8 +1,8 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import process from "process";
-import { redis } from "../../shared/db/redis";
-import { createRateLimiter } from "./middleware/rateLimiter";
+import { redis } from "../../shared/db/redis.js";
+import { createRateLimiter } from "./middleware/rateLimiter.js";
 import partyRouter from "./routes/party.routes";
 import authRouter from "./routes/auth.routes";
 import passport from "./config/passport";

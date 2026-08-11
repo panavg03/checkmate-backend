@@ -1,4 +1,4 @@
-import { redis } from "../../../shared/db/redis";
+import { redis } from "../../../shared/db/redis.js";
 import crypto from "crypto";
 
 export interface SessionData {
