@@ -2,7 +2,7 @@ import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
-import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
+//import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
 
 let tmpCache: Record<string, any> = {};
 
@@ -124,10 +124,10 @@ export class GameRoom extends Room {
             //change coordinates to lobby spawn
         },
         "getlb": (client: Client) => {
-            client.send("lb_result", {lb: getAllTeamScores()});
+            //client.send("lb_result", {lb: getAllTeamScores()});
         },
         "getscore": (client: Client) => {
-            this.broadcast("score_res", {score: getTeamScore(this.metadata.teamId)});
+            //this.broadcast("score_res", {score: getTeamScore(this.metadata.teamId)});
         }
     }
 }
