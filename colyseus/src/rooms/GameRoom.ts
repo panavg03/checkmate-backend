@@ -74,7 +74,7 @@ export class GameRoom extends Room {
         "start": (client: Client, payload: string) => {
             if(payload=="Lobby"){
                 this.state.completed.set(this.state.level, true);
-                updateTeamScore(this.metadata.teamId)
+                //updateTeamScore(this.metadata.teamId)
 
                 this.state.level = payload;
 

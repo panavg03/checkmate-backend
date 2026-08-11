@@ -11,7 +11,7 @@ module.exports = {
     script: 'build/index.js',
     time: true,
     watch: false,
-    instances: os.cpus().length,
+    instances: os.cpus().length - 2,
     exec_mode: 'fork',
     wait_ready: true,
   }],
