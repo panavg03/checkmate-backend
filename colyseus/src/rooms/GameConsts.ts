@@ -11,8 +11,8 @@ export const levelFlags: Record<string, string[]> = {
 export const levelCoords: Record<string, number[]> = {
     "Level1": [0, 3, 18],
     "Level2": [0, 0, 0],
-    "Level3": [0, 0, 0],
-    "Level4": [0, 0, 0],
+    "Level3": [16, 2, -61],
+    "Level4": [0, 1, 0],
     "Lobby": [-3, 2, -16]
 }
 
