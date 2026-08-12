@@ -47,6 +47,25 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
+      - name: Build and push colyseus
+        uses: docker/build-push-action@v6
+        with:
+          context: ./colyseus
+          file: ./colyseus/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-colyseus:latest
+            ghcr.io/${{ github.repository }}-colyseus:${{ github.sha }}
+
+      - name: Build and push express
+        uses: docker/build-push-action@v6
+        with:
+          context: ./express
+          file: ./express/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-express:latest
+            ghcr.io/${{ github.repository }}-express:${{ github.sha }}
 
       - name: Trigger Coolify redeploy
         env:
