@@ -69,7 +69,8 @@ export class GameRoom extends Room {
         },
         "quest": (client: Client, payload: any) => {
             //syncing flags
-            this.state.flags.set(payload.flag, payload.value);
+            this.state.flags.set(payload, true);
+            this.broadcast("quest", {flagName: payload}, {afterNextPatch: true});
         },
         "start": (client: Client, payload: string) => {
             if(payload=="Lobby"){
