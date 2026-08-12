@@ -33,20 +33,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}   # provided automatically
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          # Immutable SHA tag is what actually gets deployed — :latest is a
-          # convenience pointer. Rollback = redeploy an older SHA tag.
-          tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
       - name: Build and push colyseus
         uses: docker/build-push-action@v6
         with:
