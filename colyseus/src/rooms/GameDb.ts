@@ -1,0 +1,7 @@
+function validateTeamCreation(){
+
+}
+
+function validateTeamJoin(){
+    
+}

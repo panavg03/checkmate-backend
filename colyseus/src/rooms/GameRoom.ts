@@ -2,7 +2,7 @@ import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
-//import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
+import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
 
 let tmpCache: Record<string, any> = {};
 
@@ -11,6 +11,9 @@ export class GameRoom extends Room {
     state = new GameRoomState();
     
     onCreate(options: any) {
+        //validateTeamCreation(options);
+
+
         this.setMetadata({ teamId: options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
         tmpCache[options.teamId]=true;
@@ -26,6 +29,8 @@ export class GameRoom extends Room {
     }
 
     onJoin(client: Client, options: any) {
+        //validateTeamJoin()
+
         if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
@@ -72,10 +77,11 @@ export class GameRoom extends Room {
             this.state.flags.set(payload, true);
             this.broadcast("quest", {flagName: payload}, {afterNextPatch: true});
         },
-        "start": (client: Client, payload: string) => {
+        "start": async (client: Client, payload: string) => {
             if(payload=="Lobby"){
                 this.state.completed.set(this.state.level, true);
-                //updateTeamScore(this.metadata.teamId)
+                //const levelNum = levelNames.indexOf(this.state.level);
+                //await updateTeamScore(this.metadata.teamId, levelNum+1, 10);
 
                 this.state.level = payload;
 
@@ -124,11 +130,13 @@ export class GameRoom extends Room {
             });
             //change coordinates to lobby spawn
         },
-        "getlb": (client: Client) => {
-            //client.send("lb_result", {lb: getAllTeamScores()});
+        "getlb": async (client: Client) => {
+            //const res = await getAllTeamScores();
+            //client.send("lb_result", {lb: res)});
         },
-        "getscore": (client: Client) => {
-            //this.broadcast("score_res", {score: getTeamScore(this.metadata.teamId)});
+        "getscore": async (client: Client) => {
+            //const res = await getTeamScore(this.metadata.teamId);
+            //this.broadcast("score_res", {score: res)});
         }
     }
 }
