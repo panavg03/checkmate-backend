@@ -13,7 +13,6 @@ export class GameRoom extends Room {
     onCreate(options: any) {
         //validateTeamCreation(options);
 
-
         this.setMetadata({ teamId: options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
         tmpCache[options.teamId]=true;
