@@ -43,27 +43,19 @@ jobs:
             ghcr.io/${{ github.repository }}-colyseus:latest
             ghcr.io/${{ github.repository }}-colyseus:${{ github.sha }}
 
-      # Express already deployed hai?
-      # - name: Build and push express
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: ./express
-      #     file: ./express/Dockerfile
-      #     push: true
-      #     tags: |
-      #       ghcr.io/${{ github.repository }}-express:latest
-      #       ghcr.io/${{ github.repository }}-express:${{ github.sha }}
-
-      - name: Trigger Coolify redeploy
-        env:
-          WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+      - name: Deploy to Coolify
         run: |
-          if [[ -z "$WEBHOOK" ]]; then
-            echo "COOLIFY_WEBHOOK secret not set — image pushed, but nothing was redeployed."
-            echo "Add it under Settings -> Secrets and variables -> Actions."
-            exit 0
-          fi
-          curl -fsSL --retry 3 --max-time 60 "$WEBHOOK"
+          curl --request GET '${{ secrets.COOLIFY_WEBHOOK }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
+      #- name: Trigger Coolify redeploy
+        #env:
+          #WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+        #run: |
+          #if [[ -z "$WEBHOOK" ]]; then
+            #echo "COOLIFY_WEBHOOK secret not set — image pushed, but nothing was redeployed."
+            #echo "Add it under Settings -> Secrets and variables -> Actions."
+            #exit 0
+          #fi
+          #curl -fsSL --retry 3 --max-time 60 "$WEBHOOK"
 
       - name: Summary
         run: |
