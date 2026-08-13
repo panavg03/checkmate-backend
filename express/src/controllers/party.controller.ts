@@ -13,7 +13,12 @@ export class PartyController {
             const leaderId = req.user!.userId;
             const { name, password, maxPlayers } = req.body ?? {};
 
-            const party = await PartyService.createParty({ leaderId, name, password, maxPlayers });
+            const party = await PartyService.createParty({
+                leaderId: leaderId.toString(),
+                name: namename.toString(),
+                password: passwordpassword.toString(),
+                maxPlayers: maxPlayersmaxPlayers.toString()
+            });
 
             return res.status(201).json({ success: true, data: party });
         } catch (error) {
