@@ -3,8 +3,17 @@ import { Pool } from 'pg';
 
 dotenv.config();
 
+/* Commented for demo
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+});*/
+const pool = new Pool({
+    host: "0.tcp.in.ngrok.io",
+    port: 13152,
+    user: "somnium_demo",
+    password: "somnium_demo_password",
+    database: "somnium_demo",
     ssl: { rejectUnauthorized: false },
 });
 

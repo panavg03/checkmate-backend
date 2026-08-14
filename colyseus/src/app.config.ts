@@ -2,6 +2,7 @@ import { defineServer, defineRoom } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { GameRoom } from "./rooms/GameRoom.js"
 import { teamRooms } from "./teamRegistry.js";
+import { validateTeamCreation } from "./rooms/GameDb.js";
  
 const server = defineServer({
     transport: new WebSocketTransport(),
@@ -10,7 +11,7 @@ const server = defineServer({
     },
     express: (app) => {
         app.get("/", (req, res) => {
-            res.send("running colyseus server");
+            res.send(validateTeamCreation("1234"));
         });
 
         /*app.get("/join-create-room", (req, res) => {
