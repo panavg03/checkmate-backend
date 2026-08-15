@@ -43,7 +43,7 @@ export class GameRoom extends Room {
 
         const validJoin = await validateTeamJoin(options.email, options.teamId);
         if(!validJoin){
-            console.log("INVALID JOIN ATTEMPT");
+            console.log("INVALID JOIN ATTEMPT")
             client.leave(4000);
             return;
         }
