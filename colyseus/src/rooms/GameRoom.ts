@@ -32,13 +32,18 @@ export class GameRoom extends Room {
     }
 
     async onJoin(client: Client, options: any) {
-        if (options.teamId !== this.metadata.teamId) {
+        console.log("JOIN ATTEMPT");
+        console.log("session:", client.sessionId);
+        console.log("options:", options);
+        console.log("room team:", this.metadata.teamId);
+        /*if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
-        }
+        }*/
 
         const validJoin = await validateTeamJoin(options.email, options.teamId);
         if(!validJoin){
+            console.log("INVALID JOIN ATTEMPT");
             client.leave(4000);
             return;
         }
