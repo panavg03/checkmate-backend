@@ -66,7 +66,7 @@ export class GameRoom extends Room {
         this.state.flags.forEach((_, key)=>{
             client.send("despawn", {itemName: key});
         })
-
+        console.log(this.state);
         console.log("A player joined", client.sessionId, this.state.players);
         client.send("welcome");
     }
