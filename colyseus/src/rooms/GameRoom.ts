@@ -129,6 +129,8 @@ export class GameRoom extends Room {
 
                 this.broadcast("start", { levelName: payload }, { afterNextPatch: true });
             }else if(this.state.completed.get(payload)==false){ 
+                console.log("Level request", payload);
+
                 this.state.level = payload;
 
                 let [x, y, z] = levelCoords[payload];
