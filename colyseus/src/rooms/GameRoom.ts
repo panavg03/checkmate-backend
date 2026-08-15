@@ -3,7 +3,7 @@ import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
 //import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
-//import { validateTeamCreation, validateTeamJoin } from "./GameDb.js";
+import { validateTeamCreation, validateTeamJoin } from "./GameDb.js";
 
 let tmpCache: Record<string, any> = {};
 
@@ -11,13 +11,12 @@ export class GameRoom extends Room {
     maxClients = 4;
     state = new GameRoomState();
     
-    onCreate(options: any) {
-        /*
+    async onCreate(options: any) {
         const validTeam = await validateTeamCreation(options.email);
         if(!validTeam){
             this.disconnect();
             return;
-        }*/
+        }
 
         this.setMetadata({ teamId: options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
@@ -33,19 +32,18 @@ export class GameRoom extends Room {
         console.log("Room disposed for team:", this.metadata?.teamId);
     }
 
-    onJoin(client: Client, options: any) {
+    async onJoin(client: Client, options: any) {
 
         if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
         }
 
-        /*
         const validJoin = await validateTeamJoin(options.teamId, options.email);
         if(!validJoin){
             client.leave(4000);
             return;
-        }*/
+        }
         //state syncing spawn
 
         const player = new Player();
