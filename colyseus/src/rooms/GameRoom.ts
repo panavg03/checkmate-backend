@@ -71,14 +71,8 @@ export class GameRoom extends Room {
     onDrop(client: Client, code: number){
         //10 seconds for testing purposes
         // 4000 is Consented drop 
-        if(code !== 4000) this.allowReconnection(client, 30);
         //autosave state
         console.log(client.sessionId, " connection dropped");
-    }
-
-    onReconnect(client: Client){
-        //reconnection handling code
-        console.log(client.sessionId, " reconnected");
     }
 
     onLeave(client: Client, code:number){
