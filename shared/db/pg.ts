@@ -9,11 +9,11 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });*/
 const pool = new Pool({
-    host: "0.tcp.in.ngrok.io",
-    port: 13152,
-    user: "somnium_demo",
-    password: "somnium_demo_password",
-    database: "somnium_demo",
+    host: process.env.DATABASE_HOST,
+    port: Number(process.env.DATABASE_PORT),
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME,
     ssl: { rejectUnauthorized: false },
 });
 
