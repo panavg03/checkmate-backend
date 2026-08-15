@@ -37,7 +37,7 @@ export class GameRoom extends Room {
             return;
         }
 
-        const validJoin = await validateTeamJoin(options.teamId, options.email);
+        const validJoin = await validateTeamJoin(options.email, options.teamId);
         if(!validJoin){
             client.leave(4000);
             return;
