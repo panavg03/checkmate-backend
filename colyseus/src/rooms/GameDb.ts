@@ -19,8 +19,8 @@ export async function validateTeamJoin(email: string, teamId: string) {
             `SELECT 1
              FROM party_members pm
              JOIN user_auth ua
-               ON ua.user_id = pm.user_id
-             WHERE pm.party_id = $1
+               ON ua.userId = pm.userId
+             WHERE pm.partyId = $1
                AND ua.email = $2
              LIMIT 1`,
             [teamId, email]

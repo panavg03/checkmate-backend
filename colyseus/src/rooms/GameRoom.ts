@@ -14,7 +14,6 @@ export class GameRoom extends Room {
     async onCreate(options: any) {
         const validTeam = await validateTeamCreation(options.email);
         if(!validTeam){
-            this.disconnect();
             return;
         }
 
@@ -33,7 +32,6 @@ export class GameRoom extends Room {
     }
 
     async onJoin(client: Client, options: any) {
-
         if (options.teamId !== this.metadata.teamId) {
             client.leave(4000);
             return;
@@ -71,6 +69,7 @@ export class GameRoom extends Room {
     onDrop(client: Client, code: number){
         //10 seconds for testing purposes
         // 4000 is Consented drop 
+
         //autosave state
         console.log(client.sessionId, " connection dropped");
     }
