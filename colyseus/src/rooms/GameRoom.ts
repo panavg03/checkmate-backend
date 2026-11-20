@@ -27,6 +27,8 @@ export class GameRoom extends Room {
         for(let levelName of levelNames){
             this.state.completed.set(levelName, false);
         }
+
+        this.state.level = ""
     }
 
     onDispose() {
@@ -60,7 +62,7 @@ export class GameRoom extends Room {
         player.z = levelSpawnCoords[2];
         this.state.players.set(client.sessionId, player);
         //change scene to current level
-        if(this.state.level!="Lobby") client.send("start", { levelName: this.state.level });
+        client.send("start", { levelName: this.state.level });
         //setup flags
         this.state.flags.forEach((_, key)=>{
             client.send("quest", {flagName: key});

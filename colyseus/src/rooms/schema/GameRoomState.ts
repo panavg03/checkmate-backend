@@ -22,5 +22,5 @@ export class GameRoomState extends Schema {
     @type({map: "boolean"}) completed = new MapSchema<boolean>();
     @type({map: "boolean"}) despawns = new MapSchema<boolean>();
     @type("number") lvl3_fragments = 0;
-    @type("string") level = "Lobby";
+    @type("string") level = "Level1";
 }
