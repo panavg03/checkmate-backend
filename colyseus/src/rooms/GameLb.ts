@@ -1,91 +1,72 @@
-import { redis } from "../../../shared/db/redis.js";
+import { redis } from "../db/redis.js";
 
+const BOARD_KEY = "leaderboard:teams";
+const NAMES_KEY = "leaderboard:team-names";
+const LEVELS_KEY = "leaderboard:team-levels";
+const levelTeamsKey = (level: number) => `leaderboard:level:${level}`;
+const levelCountKey = (level: number) => `leaderboard:level:${level}:count`;
 
-const BASE = [100, 200, 300, 400];
-const BONUS_RANKS = 10;   
-const BONUS_STEP = 10;  
+const LEVEL_COUNT = 4;
+const BASE_POINTS = 100;
+const MAX_BONUS = 100;
+const LAST_BONUS_RANK = 25;
+const BONUS_TIME_LIMIT_SECONDS = 30 * 60;
 
-const BOARD = "lb:board";
-const awardsKey = (teamId: string) => `lb:awards:${teamId}`;
-const solvesKey = (level: number) => `lb:solves:${level}`;
+export type LeaderboardEntry = { teamId: string; teamName: string; score: number };
+export type UpdateResult = { applied: boolean; gained: number; total: number; completed: number };
 
-
-const SCRIPT = `
-local paid = redis.call('HGET', KEYS[2], ARGV[2])
-if paid then
-  local total = redis.call('ZSCORE', KEYS[1], ARGV[1])
-  local prevRank = redis.call('HGET', KEYS[2], ARGV[2] .. ':rank')
-  return { 0, tonumber(paid), math.floor(tonumber(total)), tonumber(prevRank) }
-end
-
-local rank = redis.call('INCR', KEYS[3])
-local ranks = tonumber(ARGV[4])
-local bonus = 0
-if rank <= ranks then
-  bonus = (ranks + 1 - rank) * tonumber(ARGV[5])
-end
-
-local points = tonumber(ARGV[3]) + bonus
-redis.call('HSET', KEYS[2], ARGV[2], points, ARGV[2] .. ':rank', rank)
-local total = redis.call('ZINCRBY', KEYS[1], points, ARGV[1])
-return { 1, points, math.floor(tonumber(total)), rank }
-`;
-
-type Client = typeof redis & {
-  lbUpdate(board: string, awards: string, solves: string, ...args: string[]): Promise<number[]>;
-};
-
-let ready = false;
-function client(): Client {
-  if (!ready) {
-    redis.defineCommand("lbUpdate", { numberOfKeys: 3, lua: SCRIPT });
-    ready = true;
-  }
-  return redis as Client;
+function validLevel(level: number): boolean {
+  return Number.isInteger(level) && level >= 1 && level <= LEVEL_COUNT;
 }
 
-export function baseFor(level: number): number {
-  return BASE[level - 1] ?? BASE[0];
+function bonusFor(rank: number, timeTakenSeconds: number): number {
+  if (rank < 1 || rank > LAST_BONUS_RANK) return 0;
+  if (rank === 1) return MAX_BONUS;
+  const normalizedTime = Math.min(Math.max(timeTakenSeconds, 0) / BONUS_TIME_LIMIT_SECONDS, 1);
+  return Math.round(MAX_BONUS * (1 - normalizedTime) ** 2);
 }
 
-export function bonusFor(rank: number): number {
-  if (!Number.isFinite(rank) || rank < 1 || rank > BONUS_RANKS) return 0;
-  return (BONUS_RANKS + 1 - Math.floor(rank)) * BONUS_STEP;
-}
-
-export function pointsFor(level: number, rank: number): number {
-  return baseFor(level) + bonusFor(rank);
-}
-
-export async function updateTeamScore(
+/** Record one team's completion of one level. */
+export async function update(
   teamId: string,
-  level: number
-): Promise<{ applied: boolean; gained: number; total: number; rank: number }> {
-  const [applied, gained, total, rank] = await client().lbUpdate(
-    BOARD, awardsKey(teamId), solvesKey(level),
-    teamId, String(level), String(baseFor(level)),
-    String(BONUS_RANKS), String(BONUS_STEP)
-  );
-  return { applied: applied === 1, gained, total, rank };
+  teamName: string,
+  level: number,
+  timeTakenSeconds: number,
+): Promise<UpdateResult> {
+  if (!teamId) throw new Error("teamId is required");
+  if (!validLevel(level)) throw new Error("level must be between 1 and 4");
+
+  const completionKey = levelTeamsKey(level);
+  const applied = (await redis.sadd(completionKey, teamId)) === 1;
+  const currentTotal = Number((await redis.zscore(BOARD_KEY, teamId)) ?? 0);
+  const completed = Number((await redis.hget(LEVELS_KEY, teamId)) ?? 0);
+
+  if (!applied) return { applied: false, gained: 0, total: currentTotal, completed };
+
+  // INCR gives every newly-added team a unique finishing position without a
+  // Lua script. It is only reached after SADD confirms this is a new solve.
+  const rank = await redis.incr(levelCountKey(level));
+  const gained = BASE_POINTS + bonusFor(rank, Number(timeTakenSeconds) || 0);
+  const total = await redis.zincrby(BOARD_KEY, gained, teamId);
+  await redis.hset(NAMES_KEY, teamId, teamName || teamId);
+  const newCompleted = await redis.hincrby(LEVELS_KEY, teamId, 1);
+
+  return { applied: true, gained, total: Number(total), completed: newCompleted };
 }
 
-export async function getLevelSolveCount(level: number): Promise<number> {
-  const n = await redis.get(solvesKey(level));
-  return n === null ? 0 : Number(n);
-}
-
-export async function getTeamScore(teamId: string): Promise<number> {
-  const score = await redis.zscore(BOARD, teamId);
-  return score === null ? 0 : Number(score);
-}
-
-export async function getAllTeamScores(): Promise<
-  { rank: number; teamId: string; points: number }[]
-> {
-  const raw = await redis.zrevrange(BOARD, 0, -1, "WITHSCORES");
-  const rows = [];
+/** Return the top ten teams, already shaped for JSON transport. */
+export async function getlb(): Promise<LeaderboardEntry[]> {
+  const raw = await redis.zrevrange(BOARD_KEY, 0, 9, "WITHSCORES");
+  const entries: LeaderboardEntry[] = [];
   for (let i = 0; i < raw.length; i += 2) {
-    rows.push({ rank: i / 2 + 1, teamId: raw[i], points: Number(raw[i + 1]) });
+    const teamId = raw[i];
+    entries.push({ teamId, teamName: (await redis.hget(NAMES_KEY, teamId)) ?? teamId, score: Number(raw[i + 1]) });
   }
-  return rows;
+  return entries;
+}
+
+/** Return how many of the four levels a team has completed. */
+export async function getscore(teamId: string): Promise<number> {
+  const completed = Number((await redis.hget(LEVELS_KEY, teamId)) ?? 0);
+  return Math.min(Math.max(completed, 0), LEVEL_COUNT);
 }

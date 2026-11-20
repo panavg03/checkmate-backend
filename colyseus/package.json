@@ -14,7 +14,7 @@
     "build": "npm run clean && tsc -p tsconfig.build.json",
     "clean": "rimraf build",
     "prod": "node build/colyseus/src/index.js",
-    "test": "mocha -r tsx test/**.test.ts --exit --timeout 15000"
+    "test": " mocha -r tsx test/**.test.ts --exit --timeout 15000"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -27,6 +27,7 @@
     "@colyseus/sdk": "^0.17.17",
     "@colyseus/testing": "^0.17.10",
     "@types/express": "^4.17.1",
+    "@types/pg": "^8.15.6",
     "@types/mocha": "^10.0.1",
     "mocha": "^11.7.5",
     "rimraf": "^5.0.0",
@@ -38,6 +39,7 @@
     "@colyseus/tools": "^0.17.0",
     "colyseus": "^0.17.6",
     "express": "^4.18.2",
+    "ioredis": "^5.11.1",
     "pg": "^8.23.0"
   }
 }

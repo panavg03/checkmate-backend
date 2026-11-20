@@ -1,4 +1,4 @@
-import pool from "../../../shared/db/pg.js";
+import pool from "../db/pg.js";
 
 export async function validateTeamCreation(teamId: string) {
     try {

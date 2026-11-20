@@ -2,22 +2,25 @@ import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
-//import { updateTeamScore, getTeamScore, getAllTeamScores } from "./GameLb.js";
+import { getlb, getscore, update } from "./GameLb.js";
 import { validateTeamCreation, validateTeamJoin } from "./GameDb.js";
+import { dbGetParty } from "../db/party.js";
 
 let tmpCache: Record<string, any> = {};
 
 export class GameRoom extends Room {
     maxClients = 4;
     state = new GameRoomState();
+    private levelStartedAt = Date.now();
     
     async onCreate(options: any) {
-        const validTeam = await validateTeamCreation(options.email);
+        /*const validTeam = await validateTeamCreation(options.email);
         if(!validTeam){
             return;
-        }
+        }*/
 
-        this.setMetadata({ teamId: options.teamId });
+        const party = await dbGetParty(options.teamId);
+        this.setMetadata({ teamId: options.teamId, teamName: options.teamName ?? party?.name ?? options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
         tmpCache[options.teamId]=true;
 
@@ -41,12 +44,12 @@ export class GameRoom extends Room {
             return;
         }*/
 
-        const validJoin = await validateTeamJoin(options.email, options.teamId);
+        /*const validJoin = await validateTeamJoin(options.email, options.teamId);
         if(!validJoin){
             console.log("INVALID JOIN ATTEMPT")
             client.leave(4000);
             return;
-        }
+        }*/
         //state syncing spawn
 
         const player = new Player();
@@ -102,8 +105,16 @@ export class GameRoom extends Room {
             if(payload=="Lobby"){
                 //completed code
                 this.state.completed.set(this.state.level, true);
-                //const levelNum = levelNames.indexOf(this.state.level);
-                //await updateTeamScore(this.metadata.teamId, levelNum+1, 10);
+                const levelNum = levelNames.indexOf(this.state.level);
+                if (levelNum >= 0) {
+                    await update(
+                        this.metadata.teamId,
+                        this.metadata.teamName,
+                        levelNum + 1,
+                        (Date.now() - this.levelStartedAt) / 1000,
+                    );
+                }
+
                 this.state.flags.forEach((_, key) => {
                     this.state.flags.delete(key);
                 });
@@ -112,6 +123,7 @@ export class GameRoom extends Room {
                 });
 
                 this.state.level = payload;
+                this.levelStartedAt = Date.now();
 
                 let [x, y, z] = levelCoords[payload];
 
@@ -132,6 +144,7 @@ export class GameRoom extends Room {
                 console.log("Level request", payload);
 
                 this.state.level = payload;
+                this.levelStartedAt = Date.now();
 
                 let [x, y, z] = levelCoords[payload];
 
@@ -155,12 +168,10 @@ export class GameRoom extends Room {
             this.broadcast("despawn", {itemName: itemName}, {afterNextPatch: true});
         },
         "getlb": async (client: Client) => {
-            //const res = await getAllTeamScores();
-            //client.send("lb_result", {lb: res)});
+            client.send("lb_result", { lb: await getlb() });
         },
         "getscore": async (client: Client) => {
-            //const res = await getTeamScore(this.metadata.teamId);
-            //this.broadcast("score_res", {score: res)});
+            client.send("score_result", { score: await getscore(this.metadata.teamId) });
         }
     }
 }

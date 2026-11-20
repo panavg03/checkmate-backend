@@ -18,7 +18,6 @@
   "include": [
     "src",
     "test",
-    "clients",
-    "../shared"
+    "clients"
   ]
 }
