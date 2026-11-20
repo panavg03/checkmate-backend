@@ -3,6 +3,8 @@ import { WebSocketTransport } from "@colyseus/ws-transport";
 import { GameRoom } from "./rooms/GameRoom.js"
 import { teamRooms } from "./teamRegistry.js";
 import { validateTeamCreation } from "./rooms/GameDb.js";
+import pool from "./db/pg.js";
+import { redis } from "./db/redis.js";
  
 const server = defineServer({
     transport: new WebSocketTransport(),
@@ -10,6 +12,28 @@ const server = defineServer({
         gameroom: defineRoom(GameRoom).filterBy(['teamId']),  
     },
     express: (app) => {
+        app.get("/health", async (_req, res) => {
+            try {
+                await Promise.all([
+                    pool.query("SELECT 1"),
+                    redis.ping(),
+                ]);
+
+                res.status(200).json({
+                    status: "ok",
+                    postgres: "ok",
+                    redis: "ok",
+                });
+            } catch (error) {
+                console.error("Health check failed:", error);
+                res.status(503).json({
+                    status: "error",
+                    postgres: "unknown",
+                    redis: "unknown",
+                });
+            }
+        });
+
         app.get("/", (req, res) => {
             res.send(validateTeamCreation("1234"));
             /*console.log({
