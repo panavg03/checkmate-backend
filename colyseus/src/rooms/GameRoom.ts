@@ -182,7 +182,6 @@ export class GameRoom extends Room {
             );
 
             this.state.completed.set(payload, true);
-            client.send("finish_result", { success: true, level: payload, ...result });
         }
     }
 }
