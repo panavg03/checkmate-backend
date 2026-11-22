@@ -98,10 +98,23 @@ export class GameRoom extends Room {
             player.z = payload.z;
             player.yaw = payload.yaw;
         },
-        "quest": (client: Client, payload: any) => {
-            //syncing flags
-            this.state.flags.set(payload, true);
-            this.broadcast("quest", {flagName: payload}, {afterNextPatch: true});
+        "quest": async (client: Client, payload: any) => {
+            if(payload in levelNames){
+                const levelNum = levelNames.indexOf(payload) + 1;
+
+                const result = await update(
+                    this.metadata.teamId,
+                    this.metadata.teamName,
+                    levelNum,
+                    (Date.now() - this.levelStartedAt) / 1000,
+                );
+
+                this.state.completed.set(payload, true);
+            }else{
+                //syncing flags
+                this.state.flags.set(payload, true);
+                this.broadcast("quest", {flagName: payload}, {afterNextPatch: true});
+            }
         },
         "start": async (client: Client, payload: string) => {
             if(payload=="Lobby"){
@@ -163,25 +176,5 @@ export class GameRoom extends Room {
         "getscore": async (client: Client) => {
             client.send("score_result", { score: await getscore(this.metadata.teamId) });
         },
-        "finish": async (client: Client, payload: string) => {
-            const levelNum = levelNames.indexOf(payload) + 1;
-
-            if (levelNum < 1 || levelNum > 4) {
-                client.send("finish_result", {
-                    success: false,
-                    error: "payload must be one of Level1, Level2, Level3, or Level4",
-                });
-                return;
-            }
-
-            const result = await update(
-                this.metadata.teamId,
-                this.metadata.teamName,
-                levelNum,
-                (Date.now() - this.levelStartedAt) / 1000,
-            );
-
-            this.state.completed.set(payload, true);
-        }
     }
 }
