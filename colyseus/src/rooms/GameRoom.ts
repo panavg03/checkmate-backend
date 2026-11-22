@@ -19,8 +19,8 @@ export class GameRoom extends Room {
             return;
         }*/
 
-        const party = await dbGetParty(options.teamId);
-        this.setMetadata({ teamId: options.teamId, teamName: options.teamName ?? party?.name ?? options.teamId });
+        //const party = await dbGetParty(options.teamId);
+        this.setMetadata({ teamId: options.teamId, teamName: options.teamName ??  options.teamId });
         console.log("Room created for team:", options.teamId, "| roomId:", this.roomId);
         tmpCache[options.teamId]=true;
 
@@ -28,7 +28,7 @@ export class GameRoom extends Room {
             this.state.completed.set(levelName, false);
         }
 
-        this.state.level = ""
+        this.state.level = "Level1";
     }
 
     onDispose() {
