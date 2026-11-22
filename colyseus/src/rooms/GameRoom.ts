@@ -100,6 +100,7 @@ export class GameRoom extends Room {
         },
         "quest": async (client: Client, payload: any) => {
             if(payload in levelNames){
+                console.log({"team": this.metadata.teamId, "level": payload});
                 const levelNum = levelNames.indexOf(payload) + 1;
 
                 const result = await update(
