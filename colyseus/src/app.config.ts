@@ -5,6 +5,7 @@ import { teamRooms } from "./teamRegistry.js";
 import { validateTeamCreation } from "./rooms/GameDb.js";
 import pool from "./db/pg.js";
 import { redis } from "./db/redis.js";
+import { getlb } from "./rooms/GameLb.js";
  
 const server = defineServer({
     transport: new WebSocketTransport(),
@@ -12,6 +13,15 @@ const server = defineServer({
         gameroom: defineRoom(GameRoom).filterBy(['teamId']),  
     },
     express: (app) => {
+        app.get("/leaderboard", async (_req, res) => {
+            try {
+                res.json({ lb: await getlb() });
+            } catch (error) {
+                console.error("Leaderboard request failed:", error);
+                res.status(500).json({ error: "Failed to fetch leaderboard" });
+            }
+        });
+
         app.get("/health", async (_req, res) => {
             try {
                 await Promise.all([

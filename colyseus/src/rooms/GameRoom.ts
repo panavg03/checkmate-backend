@@ -2,7 +2,7 @@ import { Room, Client, CloseCode, Messages } from "colyseus";
 import { GameRoomState, Player } from "./schema/GameRoomState.js";
 import { teamRooms } from "../teamRegistry.js";
 import {levelFlags, levelCoords, levelNames}  from "./GameConsts.js";
-import { getlb, getscore, update } from "./GameLb.js";
+import { getscore, update } from "./GameLb.js";
 import { validateTeamCreation, validateTeamJoin } from "./GameDb.js";
 import { dbGetParty } from "../db/party.js";
 
@@ -107,15 +107,6 @@ export class GameRoom extends Room {
             if(payload=="Lobby"){
                 //completed code
                 this.state.completed.set(this.state.level, true);
-                const levelNum = levelNames.indexOf(this.state.level);
-                if (levelNum >= 0) {
-                    await update(
-                        this.metadata.teamId,
-                        this.metadata.teamName,
-                        levelNum + 1,
-                        (Date.now() - this.levelStartedAt) / 1000,
-                    );
-                }
 
                 this.state.flags.forEach((_, key) => {
                     this.state.flags.delete(key);
@@ -169,11 +160,29 @@ export class GameRoom extends Room {
             this.state.despawns.set(itemName, true);
             this.broadcast("despawn", {itemName: itemName}, {afterNextPatch: true});
         },
-        "getlb": async (client: Client) => {
-            client.send("lb_result", { lb: await getlb() });
-        },
         "getscore": async (client: Client) => {
             client.send("score_result", { score: await getscore(this.metadata.teamId) });
+        },
+        "finish": async (client: Client, payload: string) => {
+            const levelNum = levelNames.indexOf(payload) + 1;
+
+            if (levelNum < 1 || levelNum > 4) {
+                client.send("finish_result", {
+                    success: false,
+                    error: "payload must be one of Level1, Level2, Level3, or Level4",
+                });
+                return;
+            }
+
+            const result = await update(
+                this.metadata.teamId,
+                this.metadata.teamName,
+                levelNum,
+                (Date.now() - this.levelStartedAt) / 1000,
+            );
+
+            this.state.completed.set(payload, true);
+            client.send("finish_result", { success: true, level: payload, ...result });
         }
     }
 }
